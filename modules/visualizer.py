@@ -22,8 +22,7 @@ class Maze3DVisualizer:
         self.font = pygame.font.Font(None, 36)
         self.ui_buttons = {
             'start': pygame.Rect(20, self.height - 60, 100, 40),
-            'reset': pygame.Rect(140, self.height - 60, 100, 40),
-            'rotate': pygame.Rect(260, self.height - 60, 100, 40)
+            'reset': pygame.Rect(140, self.height - 60, 100, 40)
         }
         self.button_colors = {
             'normal': (100, 100, 100),
@@ -285,8 +284,7 @@ class Maze3DVisualizer:
         instructions = [
             "Controls:",
             "SPACE - Start/Pause",
-            "R - Reset",
-            "ROTATE - Change View"
+            "R - Reset"
         ]
 
         instruction_y = self.height - 200
@@ -408,8 +406,6 @@ class Maze3DVisualizer:
                 elif button == 'reset':
                     self.reset_algorithm_states()
                     self.is_running = False
-                elif button == 'rotate':
-                    self.rotation_angle = (self.rotation_angle + 90) % 360
 
     def run(self):
         clock = pygame.time.Clock()
