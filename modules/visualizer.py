@@ -267,7 +267,8 @@ class Maze3DVisualizer:
             ("Black", (51, 51, 51), "Walls"),
             ("Brown", (153, 76, 0), "Slow Terrain (2x cost)"),
             ("Light Blue", (128, 179, 255), "Visited Cells"),
-            ("Yellow", (255, 255, 0), "Path Found"),
+            ("Yellow", (255, 255, 0), "Final Path"),
+            ("Magenta", (255, 0, 255), "Current Best Path"),
             ("Blue", (0, 0, 255), "Agent Position"),
             ("Green", (0, 255, 0), "Start Point"),
             ("Red", (255, 0, 0), "Goal Point")
@@ -320,6 +321,20 @@ class Maze3DVisualizer:
             diff = abs(astar_display_time - dijkstra_display_time)
             self.draw_text_3d(-1, 10, 0, [f"Time Diff: {diff:.3f}s"])
         
+        # Draw current best exploration paths in magenta if not complete
+        if not self.astar_done and self.agent_astar.path:
+            for cell in self.agent_astar.path:
+                i, j = cell
+                x = j - 20
+                z = i
+                self.draw_cube((x, 2.2, z), (1.0, 0.0, 1.0), 0.2)
+        if not self.dijkstra_done and self.agent_dijkstra.path:
+            for cell in self.agent_dijkstra.path:
+                i, j = cell
+                x = j + 10
+                z = i
+                self.draw_cube((x, 2.2, z), (1.0, 0.0, 1.0), 0.2)
+
         # Draw UI with proper blending
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
