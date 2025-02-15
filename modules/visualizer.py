@@ -272,6 +272,10 @@ class Maze3DVisualizer:
             self.draw_text_3d(12, 10, 0, [f"Time: {dijkstra_display_time:.3f}s"])
             diff = abs(astar_display_time - dijkstra_display_time)
             self.draw_text_3d(-1, 10, 0, [f"Time Diff: {diff:.3f}s"])
+
+            # Display nodes processed by each algorithm
+            self.draw_text_3d(-12, 14, 0, [f"A* Nodes Proccesed: {len(self.astar_closed)}"])
+            self.draw_text_3d(10, 14, 0, [f"Dijkstra Nodes Proccesed: {len(self.dijkstra_closed)}"])
         
         # Draw current best candidate exploration paths (magenta) if still exploring
         if self.agent_astar.exploring and self.agent_astar.path:
