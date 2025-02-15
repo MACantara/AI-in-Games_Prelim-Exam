@@ -108,13 +108,24 @@ class Maze3DVisualizer:
         
         glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, (r, g, b, 1.0))
         
+        # Updated vertices and faces for a fully rendered cube
         vertices = [
-            (1, -1, -1), (1, 1, -1), (-1, 1, -1), (-1, -1, -1),
-            (1, -1, 1), (1, 1, 1), (-1, -1, 1), (-1, 1, 1)
+            (-1, -1, -1),  # 0
+            ( 1, -1, -1),  # 1
+            ( 1,  1, -1),  # 2
+            (-1,  1, -1),  # 3
+            (-1, -1,  1),  # 4
+            ( 1, -1,  1),  # 5
+            ( 1,  1,  1),  # 6
+            (-1,  1,  1)   # 7
         ]
         faces = [
-            (0,1,2,3), (5,4,7,6), (4,0,3,7),
-            (1,5,6,2), (4,5,1,0), (3,2,6,7)
+            (0, 1, 5, 4),  # Bottom
+            (3, 2, 6, 7),  # Top
+            (4, 5, 6, 7),  # Front
+            (0, 1, 2, 3),  # Back
+            (0, 4, 7, 3),  # Left
+            (1, 5, 6, 2)   # Right
         ]
         
         glBegin(GL_QUADS)
