@@ -307,6 +307,10 @@ class Maze3DVisualizer:
         self.draw_maze3d(10, self.grid, self.dijkstra_closed, 
                         self.dijkstra_path, self.agent_dijkstra.pos)
         
+        # Add labels for the maps above each maze
+        self.draw_text_3d(-14, 3, 0, ["A* Algorithm"])
+        self.draw_text_3d(13, 3, 0, ["Dijkstra's Algorithm"])
+        
         # Draw UI with proper blending
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
