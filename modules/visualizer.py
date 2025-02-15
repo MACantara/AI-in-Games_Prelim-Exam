@@ -311,6 +311,17 @@ class Maze3DVisualizer:
         self.draw_text_3d(-14, 3, 0, ["A* Algorithm"])
         self.draw_text_3d(13, 3, 0, ["Dijkstra's Algorithm"])
         
+        if self.astar_time:
+            self.draw_text_3d(-12, 10, 0, [f"Time: {self.astar_time:.3f}s"])
+
+        if self.dijkstra_time:
+            self.draw_text_3d(12, 10, 0, [f"Time: {self.dijkstra_time:.3f}s"])
+
+        # Add time lapse values if available and time difference
+        if self.astar_time and self.dijkstra_time:
+            diff = abs(self.astar_time - self.dijkstra_time)
+            self.draw_text_3d(-1, 10, 0, [f"Time Diff: {diff:.3f}s"])
+        
         # Draw UI with proper blending
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
