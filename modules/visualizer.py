@@ -321,14 +321,14 @@ class Maze3DVisualizer:
             diff = abs(astar_display_time - dijkstra_display_time)
             self.draw_text_3d(-1, 10, 0, [f"Time Diff: {diff:.3f}s"])
         
-        # Draw current best exploration paths in magenta if not complete
-        if not self.astar_done and self.agent_astar.path:
+        # Draw current best candidate exploration paths (magenta) if still exploring
+        if self.agent_astar.exploring and self.agent_astar.path:
             for cell in self.agent_astar.path:
                 i, j = cell
                 x = j - 20
                 z = i
                 self.draw_cube((x, 2.2, z), (1.0, 0.0, 1.0), 0.2)
-        if not self.dijkstra_done and self.agent_dijkstra.path:
+        if self.agent_dijkstra.exploring and self.agent_dijkstra.path:
             for cell in self.agent_dijkstra.path:
                 i, j = cell
                 x = j + 10

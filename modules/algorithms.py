@@ -44,7 +44,9 @@ def astar_step(grid, start, goal, open_set, closed_set, came_from, g_score):
             f = tentative_g + heuristic(neighbor, goal)
             heapq.heappush(open_set, (f, neighbor))
     
-    return current, False, None, came_from
+    # Always return the best candidate path so far.
+    best_path = reconstruct_path(came_from, current)
+    return current, False, best_path, came_from
 
 def dijkstra_step(grid, start, goal, open_set, closed_set, came_from, g_score):
     """Modified Dijkstra step to return current exploration path"""
@@ -68,4 +70,5 @@ def dijkstra_step(grid, start, goal, open_set, closed_set, came_from, g_score):
             g_score[neighbor] = tentative_g
             heapq.heappush(open_set, (tentative_g, neighbor))
     
-    return current, False, None, came_from
+    best_path = reconstruct_path(came_from, current)
+    return current, False, best_path, came_from

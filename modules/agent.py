@@ -12,8 +12,9 @@ class PathAgent:
         self.height_speed = 0.1
         
     def set_exploration_path(self, current, came_from):
-        if not self.exploring or not current:
+        if not current:
             return
+        # Always update exploration path using current candidate's best route.
         path = reconstruct_path(came_from, current)
         self.path = path
         self.path_index = len(path) - 1

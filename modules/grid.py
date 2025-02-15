@@ -1,5 +1,8 @@
 def create_grid():
-    """Create a 15x15 grid with enhanced 3D terrain"""
+    """Create a 15x15 grid with enhanced 3D terrain.
+    
+    Ensures that the start (0,0) and goal (14,14) cells remain clear.
+    """
     grid = [[0] * 15 for _ in range(15)]
     heights = [[0.0] * 15 for _ in range(15)]
     
