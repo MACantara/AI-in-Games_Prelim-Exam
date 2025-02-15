@@ -64,6 +64,7 @@ class Maze3DVisualizer:
         self.astar_time: float = 0.0
         self.dijkstra_time: float = 0.0
         self.start_time = None
+        self.accumulated_time: float = 0.0
         glutInit()
         self.text_surface = pygame.Surface((256, 64), pygame.SRCALPHA)
         self.text_font = pygame.font.Font(None, 24)
@@ -157,6 +158,7 @@ class Maze3DVisualizer:
         self.agent_astar = PathAgent(self.start)
         self.agent_dijkstra = PathAgent(self.start)
         self.start_time = None
+        self.accumulated_time = 0.0
         self.astar_time = 0.0
         self.dijkstra_time = 0.0
 
@@ -262,20 +264,22 @@ class Maze3DVisualizer:
         self.draw_text_3d(-14, 3, 0, ["A* Algorithm"])
         self.draw_text_3d(13, 3, 0, ["Dijkstra's Algorithm"])
         
-        # Calculate and display real-time elapsed times if start_time is set
+        # Calculate and display real-time elapsed times using the accumulator.
         if self.start_time is not None:
-            curr_time = time.time() - self.start_time
-            astar_display_time = self.astar_time if self.astar_done else curr_time
-            dijkstra_display_time = self.dijkstra_time if self.dijkstra_done else curr_time
+            curr_time = self.accumulated_time + (time.time() - self.start_time)
+        else:
+            curr_time = self.accumulated_time
+        astar_display_time = self.astar_time if self.astar_done else curr_time
+        dijkstra_display_time = self.dijkstra_time if self.dijkstra_done else curr_time
 
-            self.draw_text_3d(-12, 10, 0, [f"Time: {astar_display_time:.3f}s"])
-            self.draw_text_3d(12, 10, 0, [f"Time: {dijkstra_display_time:.3f}s"])
-            diff = abs(astar_display_time - dijkstra_display_time)
-            self.draw_text_3d(-1, 10, 0, [f"Time Diff: {diff:.3f}s"])
+        self.draw_text_3d(-12, 10, 0, [f"Time: {astar_display_time:.3f}s"])
+        self.draw_text_3d(12, 10, 0, [f"Time: {dijkstra_display_time:.3f}s"])
+        diff = abs(astar_display_time - dijkstra_display_time)
+        self.draw_text_3d(-1, 10, 0, [f"Time Diff: {diff:.3f}s"])
 
-            # Display nodes processed by each algorithm
-            self.draw_text_3d(-12, 14, 0, [f"A* Nodes Proccesed: {len(self.astar_closed)}"])
-            self.draw_text_3d(10, 14, 0, [f"Dijkstra Nodes Proccesed: {len(self.dijkstra_closed)}"])
+        # Display nodes processed by each algorithm
+        self.draw_text_3d(-12, 14, 0, [f"A* Nodes Proccesed: {len(self.astar_closed)}"])
+        self.draw_text_3d(9, 14, 0, [f"Dijkstra Nodes Proccesed: {len(self.dijkstra_closed)}"])
         
         # Draw current best candidate exploration paths (magenta) if still exploring
         if self.agent_astar.exploring and self.agent_astar.path:
@@ -360,7 +364,16 @@ class Maze3DVisualizer:
                     self.handle_mouse_click(event.pos)
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
-                        self.is_running = not self.is_running
+                        if self.is_running:
+                            # Pause the simulation: accumulate elapsed time and pause agents.
+                            if self.start_time is not None:
+                                self.accumulated_time += time.time() - self.start_time
+                            self.start_time = None
+                            self.is_running = False
+                        else:
+                            # Resume the simulation.
+                            self.start_time = time.time()
+                            self.is_running = True
                     elif event.key == pygame.K_r:
                         self.reset_algorithm_states()
                         self.is_running = False
