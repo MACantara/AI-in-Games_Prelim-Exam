@@ -311,15 +311,15 @@ class Maze3DVisualizer:
         self.draw_text_3d(-14, 3, 0, ["A* Algorithm"])
         self.draw_text_3d(13, 3, 0, ["Dijkstra's Algorithm"])
         
-        if self.astar_time:
-            self.draw_text_3d(-12, 10, 0, [f"Time: {self.astar_time:.3f}s"])
+        # Calculate and display real-time elapsed times if start_time is set
+        if self.start_time is not None:
+            curr_time = time.time() - self.start_time
+            astar_display_time = self.astar_time if self.astar_done else curr_time
+            dijkstra_display_time = self.dijkstra_time if self.dijkstra_done else curr_time
 
-        if self.dijkstra_time:
-            self.draw_text_3d(12, 10, 0, [f"Time: {self.dijkstra_time:.3f}s"])
-
-        # Add time lapse values if available and time difference
-        if self.astar_time and self.dijkstra_time:
-            diff = abs(self.astar_time - self.dijkstra_time)
+            self.draw_text_3d(-12, 10, 0, [f"Time: {astar_display_time:.3f}s"])
+            self.draw_text_3d(12, 10, 0, [f"Time: {dijkstra_display_time:.3f}s"])
+            diff = abs(astar_display_time - dijkstra_display_time)
             self.draw_text_3d(-1, 10, 0, [f"Time Diff: {diff:.3f}s"])
         
         # Draw UI with proper blending
