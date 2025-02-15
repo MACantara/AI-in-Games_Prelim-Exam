@@ -17,23 +17,29 @@ This project demonstrates a 3D pathfinding visualization tool using A* and Dijks
 ### Prerequisites
 - Python 3.x
 - pip
+- Visual Studio Code installed
+- Command Prompt (cmd) on Windows
 
 ### Installation Steps
 1. Clone or download the repository into `/c:/Programming_Projects/AI-in-Games_Prelim-Exam`.
-2. Open a terminal and navigate to the project directory:
+2. Open Visual Studio Code and open the folder `c:/Programming_Projects/AI-in-Games_Prelim-Exam`.
+3. Open the integrated terminal in VS Code by pressing ``Ctrl+` `` (To the left of number 1 key on the top of the keyboard):
+   - Click the dropdown icon next to the plus (+) icon at the top-right of the Terminal panel.
+   - When prompted, select "Command Prompt" to open a new terminal using cmd.
+4. In the integrated terminal, navigate to the project directory:
     ```
-    cd /c:/Programming_Projects/AI-in-Games_Prelim-Exam
+    cd c:/Programming_Projects/AI-in-Games_Prelim-Exam
     ```
-3. (Optional) Create and activate a virtual environment:
+5. Create and activate a virtual environment:
     ```
     python -m venv venv
-    venv\Scripts\activate  # On Windows
+    venv\Scripts\activate
     ```
-4. Install the required packages using pip:
+6. Install the required packages using pip:
     ```
     pip install -r requirements.txt
     ```
-5. Run the application:
+7. Run the application:
     ```
     python app.py
     ```
