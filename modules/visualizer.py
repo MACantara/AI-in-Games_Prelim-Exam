@@ -87,16 +87,12 @@ class Maze3DVisualizer:
     def setup_camera(self):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        gluPerspective(45, (self.width/self.height), 0.1, 100.0)
+        gluPerspective(45, (self.width/self.height), 0.1, 200.0)
         
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        # Adjust camera position to show both mazes clearly
-        gluLookAt(
-            0, self.camera_height, self.camera_distance,  # Camera position
-            0, 0, 0,      # Look at center point
-            0, 1, 0       # Up vector
-        )
+        # Top-down view: center roughly between both maps (x=2, z=7) and high above (y=50)
+        gluLookAt(2, 50, 7, 2, 0, 7, 0, 0, -1)
 
     def draw_cube(self, position, color, scale=1.0):
         x, y, z = position
@@ -302,18 +298,10 @@ class Maze3DVisualizer:
     def render(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
-        
-        # Setup camera view for 3D content
-        gluLookAt(
-            0, self.camera_height, self.camera_distance,
-            0, 0, 0,
-            0, 1, 0
-        )
-        
-        # Apply rotation for better visibility
-        glRotatef(self.rotation_angle, 0, 1, 0)
-        
-        # Adjust maze positions further apart
+        # Use top-down camera view instead of rotating view:
+        gluLookAt(2, 50, 7, 2, 0, 7, 0, 0, -1)
+
+        # Draw both maps without additional rotation
         self.draw_maze3d(-20, self.grid, self.astar_closed, 
                         self.astar_path, self.agent_astar.pos)
         self.draw_maze3d(10, self.grid, self.dijkstra_closed, 
