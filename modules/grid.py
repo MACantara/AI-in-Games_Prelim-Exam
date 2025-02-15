@@ -1,12 +1,17 @@
-def create_grid():
-    """Create a 15x15 grid with enhanced 3D terrain.
-    
-    Ensures that the start (0,0) and goal (14,14) cells remain clear.
+from typing import List, Tuple
+
+GRID_SIZE: int = 15
+START: Tuple[int, int] = (0, 0)
+GOAL: Tuple[int, int] = (14, 14)
+
+def create_grid() -> Tuple[List[List[int]], List[List[float]]]:
     """
-    grid = [[0] * 15 for _ in range(15)]
-    heights = [[0.0] * 15 for _ in range(15)]
+    Create a 15x15 grid with enhanced 3D terrain.
+    Obstacles and slow terrain are placed, ensuring that START and GOAL cells remain clear.
+    """
+    grid: List[List[int]] = [[0] * GRID_SIZE for _ in range(GRID_SIZE)]
+    heights: List[List[float]] = [[0.0] * GRID_SIZE for _ in range(GRID_SIZE)]
     
-    # Define obstacles and terrain patterns
     obstacles = [
         # Top-left corner maze pattern
         (0, 1), (1, 1), (2, 1), (2, 2), (1, 2),
@@ -66,7 +71,6 @@ def create_grid():
         (12, 10), (12, 11)
     ]
     
-    # Place obstacles and terrain
     for pos in obstacles:
         grid[pos[0]][pos[1]] = 1
         heights[pos[0]][pos[1]] = 1.0
@@ -75,10 +79,10 @@ def create_grid():
         grid[pos[0]][pos[1]] = 2
         heights[pos[0]][pos[1]] = 0.3
     
-    # Ensure start and goal are clear
-    grid[0][0] = 0
-    grid[14][14] = 0
-    heights[0][0] = 0.0
-    heights[14][14] = 0.0
+    # Ensure START and GOAL are clear.
+    grid[START[0]][START[1]] = 0
+    grid[GOAL[0]][GOAL[1]] = 0
+    heights[START[0]][START[1]] = 0.0
+    heights[GOAL[0]][GOAL[1]] = 0.0
     
     return grid, heights
