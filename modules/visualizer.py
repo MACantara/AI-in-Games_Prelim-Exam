@@ -173,14 +173,14 @@ class Maze2DVisualizer:
         self.draw_grid(dijkstra_x, self.grid, self.dijkstra_closed,
                       self.dijkstra_path, self.agent_dijkstra)
 
-        # Draw algorithm titles at the top
-        astar_title = self.font.render("A* Algorithm", True, (0, 0, 0))
-        dijkstra_title = self.font.render("Dijkstra's Algorithm", True, (0, 0, 0))
-        self.screen.blit(astar_title, (astar_x + (15 * self.cell_size)//2 - astar_title.get_width()//2, 20))
-        self.screen.blit(dijkstra_title, (dijkstra_x + (15 * self.cell_size)//2 - dijkstra_title.get_width()//2, 20))
-
-        # Draw statistics at the bottom
+        # Draw statistics and labels at the bottom
         stats_y = self.height - 120
+        title_y = stats_y - 40  # Position titles just above stats
+
+        # Draw A* label and stats
+        astar_title = self.font.render("A* Algorithm", True, (0, 0, 0))
+        self.screen.blit(astar_title, (astar_x + (15 * self.cell_size)//2 - astar_title.get_width()//2, title_y))
+        
         if self.astar_done:
             astar_stats = [
                 f"Time: {self.astar_time:.3f}s",
@@ -193,6 +193,10 @@ class Maze2DVisualizer:
                 self.screen.blit(text, (astar_x + (15 * self.cell_size)//2 - text.get_width()//2, y))
                 y += 25
 
+        # Draw Dijkstra label and stats
+        dijkstra_title = self.font.render("Dijkstra's Algorithm", True, (0, 0, 0))
+        self.screen.blit(dijkstra_title, (dijkstra_x + (15 * self.cell_size)//2 - dijkstra_title.get_width()//2, title_y))
+        
         if self.dijkstra_done:
             dijkstra_stats = [
                 f"Time: {self.dijkstra_time:.3f}s",
