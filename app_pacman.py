@@ -79,12 +79,18 @@ def main():
     scatter_timer = 0
     SCATTER_INTERVAL = 200  # Alternate between scatter and chase every 200 frames
 
+    # Add debug mode flag
+    debug_mode = False
+
     running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
+                # Add debug mode toggle with F3 key
+                if event.key == pygame.K_F3:
+                    debug_mode = not debug_mode
                 new_pos = player_pos.copy()
                 # Update player direction based on key press
                 if event.key in [pygame.K_UP, pygame.K_w]:
@@ -156,6 +162,23 @@ def main():
                         dot_size = cell_size // 4
                         dot_pos = (x + cell_size//2, y + cell_size//2)
                         pygame.draw.circle(screen, (255, 255, 0), dot_pos, dot_size)
+        
+        # Draw debug paths if debug mode is on
+        if debug_mode:
+            for ghost in ghosts:
+                if ghost.path:
+                    # Draw path line
+                    points = [(p[1] * cell_size + cell_size//2, p[0] * cell_size + cell_size//2) 
+                             for p in ghost.path[ghost.path_index:]]
+                    if len(points) > 1:
+                        pygame.draw.lines(screen, ghost.color, False, points, 2)
+                    # Draw target point
+                    target = ghost.get_chase_target(tuple(player_pos), player_direction, 
+                                                  ghosts[0].pos if ghost.ghost_type != 'blinky' else None)
+                    target_pos = (target[1] * cell_size + cell_size//2, 
+                                target[0] * cell_size + cell_size//2)
+                    pygame.draw.circle(screen, ghost.color, target_pos, 5)
+
         # Draw player.
         player_rect = pygame.Rect(player_pos[1]*cell_size, player_pos[0]*cell_size, cell_size, cell_size)
         pygame.draw.ellipse(screen, player_color, player_rect)
@@ -163,6 +186,12 @@ def main():
         for ghost in ghosts:
             ghost_rect = pygame.Rect(ghost.pos[1]*cell_size, ghost.pos[0]*cell_size, cell_size, cell_size)
             pygame.draw.ellipse(screen, ghost.color, ghost_rect)
+
+        # Draw debug mode status
+        font = pygame.font.Font(None, 36)
+        debug_text = font.render("Debug Mode: " + ("ON" if debug_mode else "OFF") + " (F3)", True, (255, 255, 255))
+        screen.blit(debug_text, (10, height - 30))
+
         pygame.display.flip()
         clock.tick(30)  # Increased from 10 to 30 for smoother player movement
     pygame.quit()
