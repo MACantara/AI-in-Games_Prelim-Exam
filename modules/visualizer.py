@@ -98,10 +98,17 @@ class Maze2DVisualizer:
                     self.screen.blit(s, (x, y))
                 
                 # Draw path
-                if path and (i, j) in path:
+                if not agent.exploring and path and (i, j) in path:
+                    # Final path in yellow (existing)
                     s = pygame.Surface((self.cell_size, self.cell_size))
                     s.set_alpha(128)
                     s.fill((255, 255, 0))
+                    self.screen.blit(s, (x, y))
+                elif agent.exploring and path and (i, j) in path:
+                    # Current best path in magenta during exploration
+                    s = pygame.Surface((self.cell_size, self.cell_size))
+                    s.set_alpha(128)
+                    s.fill((255, 0, 255))  # Magenta
                     self.screen.blit(s, (x, y))
                 
                 # Draw grid lines
@@ -151,7 +158,7 @@ class Maze2DVisualizer:
         self.screen.fill((255, 255, 255))
         
         # Draw legend on the left side
-        self.draw_legend(20, 540)
+        self.draw_legend(20, 500)
         
         # Center the grids and add more spacing between them
         grid_offset = (self.width - (2 * 15 * self.cell_size + 200)) // 2
@@ -307,6 +314,7 @@ class Maze2DVisualizer:
             ("Black", (51, 51, 51), "Walls"),
             ("Brown", (153, 76, 0), "Slow Terrain (2x cost)"),
             ("Light Blue", (128, 179, 255), "Visited Cells"),
+            ("Magenta", (255, 0, 255), "Current Best Path"),
             ("Yellow", (255, 255, 0), "Final Path"),
             ("Green", (0, 255, 0), "Start Point"),
             ("Red", (255, 0, 0), "Goal Point")
