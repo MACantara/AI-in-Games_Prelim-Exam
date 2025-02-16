@@ -16,8 +16,8 @@ def compute_astar_path(grid: List[List[int]], start: Tuple[int,int], goal: Tuple
             path = res_path
         if is_complete:
             break
-    if not path or path[-1] != goal:
-        return None
+    if not path:
+        return [start]
     return path
 
 def can_move_to(grid: List[List[int]], pos: Tuple[int,int]) -> bool:
@@ -108,9 +108,15 @@ def main():
                 blinky_pos = ghosts[0].pos if ghost.ghost_type != 'blinky' else None
                 # Get target based on ghost's individual behavior
                 target = ghost.get_chase_target(tuple(player_pos), player_direction, blinky_pos)
-                path = compute_astar_path(grid, ghost.pos, target)
-                if path and len(path) > 1:
-                    ghost.set_final_path(path)
+                
+                # Only compute new path if ghost has reached end of current path or has no path
+                if not ghost.path or ghost.path_index >= len(ghost.path) - 1:
+                    path = compute_astar_path(grid, ghost.pos, target)
+                    if path and len(path) > 1:
+                        ghost.set_final_path(path)
+                
+                # Always try to move if we have a path
+                if ghost.path and ghost.path_index < len(ghost.path) - 1:
                     ghost.move_step()
                     
         # Render scene.
