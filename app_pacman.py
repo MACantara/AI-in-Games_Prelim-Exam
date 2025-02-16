@@ -29,7 +29,7 @@ def can_move_to(grid: List[List[int]], pos: Tuple[int,int]) -> bool:
 def main():
     pygame.init()
     cell_size = 30  # Smaller cells to fit 25x25 grid
-    width, height = 23 * cell_size, 23 * cell_size
+    width, height = 23 * cell_size, 25 * cell_size
     screen = pygame.display.set_mode((width, height))
     pygame.display.set_caption("Pacman with AI Enemies")
     clock = pygame.time.Clock()
