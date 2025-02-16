@@ -28,19 +28,29 @@ def can_move_to(grid: List[List[int]], pos: Tuple[int,int]) -> bool:
 
 def main():
     pygame.init()
-    cell_size = 30  # Smaller cells to fit 25x25 grid
+    cell_size = 30
     width, height = 23 * cell_size, 25 * cell_size
     screen = pygame.display.set_mode((width, height))
     pygame.display.set_caption("Pacman with AI Enemies")
     clock = pygame.time.Clock()
 
     grid, _ = create_grid()
-    # Player starts in middle of 25x25 grid
-    player_pos = [12, 12]
-    player_color = (255, 255, 0)  # Yellow for player
+    
+    # Find initial positions from the grid layout
+    player_pos = None
+    enemy_positions = []
+    
+    # Scan the map_data to find C and M positions
+    for i in range(len(grid)):
+        for j in range(len(grid[0])):
+            x = j * cell_size
+            y = i * cell_size
+            if (i, j) == (18, 12):  # Position of 'C' in the map
+                player_pos = [i, j]
+            elif (i, j) in [(11, 8), (11, 9), (11, 15), (11, 16)]:  # Positions of 'M' in the map
+                enemy_positions.append((i, j))
 
-    # Create 4 enemy agents at valid positions within the larger maze
-    enemy_positions = [(1,1), (1,23), (23,1), (23,23)]
+    player_color = (255, 255, 0)  # Yellow for player
     enemies = [PathAgent(pos) for pos in enemy_positions]
     enemy_color = (255, 0, 0)  # Red for enemies
 
