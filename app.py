@@ -79,6 +79,7 @@ class PacmanGame:
             if not ghost.active:
                 continue
                 
+            # Always get new target and calculate new path
             blinky_pos = self.state.ghosts[0].pos if ghost.ghost_type != 'blinky' else None
             target = ghost.get_chase_target(
                 tuple(self.state.player_pos),
@@ -86,10 +87,10 @@ class PacmanGame:
                 blinky_pos
             )
             
-            if not ghost.path or ghost.path_index >= len(ghost.path) - 1:
-                path = astar_path(self.state.grid, ghost.pos, target)
-                if path and len(path) > 1:
-                    ghost.set_path(path)
+            # Calculate new path every frame
+            path = astar_path(self.state.grid, ghost.pos, target)
+            if path and len(path) > 1:
+                ghost.set_path(path)
             
             ghost.move_step()
             
