@@ -4,7 +4,7 @@ import time
 
 from .algorithms import heuristic, astar_step, dijkstra_step
 from .agent import PathAgent
-from .grid import create_grid, START, GOAL
+from .grid import create_grid  # Remove START, GOAL from import
 
 class Maze2DVisualizer:
     def __init__(self) -> None:
@@ -33,8 +33,8 @@ class Maze2DVisualizer:
         }
         
         self.grid, _ = create_grid()
-        self.start = START
-        self.goal = GOAL
+        self.start = (1, 1)  # Define start locally
+        self.goal = (GRID_SIZE-2, GRID_SIZE-2)  # Define goal locally
         
         self.reset_algorithm_states()
         self.is_running = False
