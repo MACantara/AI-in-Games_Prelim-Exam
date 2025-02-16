@@ -9,6 +9,7 @@ class Ghost(PathAgent):
         self.scatter_mode = False
         self.color = self.get_ghost_color()
         self.scatter_target = self.get_scatter_target()
+        self.active = False  # Add active property to track if ghost is released
         
     def get_ghost_color(self) -> Tuple[int, int, int]:
         colors = {
