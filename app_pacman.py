@@ -59,7 +59,7 @@ def main():
             y = i * cell_size
             if (i, j) == (18, 11):  # Position of 'C' in the map
                 player_pos = [i, j]
-            elif (i, j) in [(11, 10), (11, 11), (11, 13), (11, 14)]:  # Positions of 'M' in the map
+            elif (i, j) in [(11, 9), (11, 10), (11, 12), (11, 13)]:  # Positions of 'M' in the map
                 enemy_positions.append((i, j))
 
     player_color = (255, 255, 0)  # Yellow for player
