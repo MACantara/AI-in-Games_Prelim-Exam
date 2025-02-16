@@ -10,8 +10,18 @@ Grid = List[List[int]]
 CameFrom = Dict[Point, Point]
 GScore = Dict[Point, float]
 
-def heuristic(a: Point, b: Point) -> int:
-    """Manhattan distance heuristic."""
+def heuristic(a: Tuple[int, int], b: Tuple[int, int]) -> float:
+    # Special case for tunnel row
+    if a[0] == 11 and b[0] == 11:
+        # Calculate both direct and tunnel distances
+        direct_dist = abs(a[1] - b[1])
+        tunnel_dist = min(
+            a[1] + b[1],  # Distance through left tunnel
+            (23 - a[1]) + (23 - b[1])  # Distance through right tunnel
+        )
+        return min(direct_dist, tunnel_dist)
+    
+    # Normal Manhattan distance for non-tunnel paths
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
 def neighbors(pos: Point, grid: Grid) -> Generator[Tuple[Point, int], None, None]:
