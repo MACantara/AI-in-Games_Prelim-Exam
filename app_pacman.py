@@ -64,6 +64,13 @@ def main():
         Ghost((11, 16), 'clyde'),   # Orange ghost
     ]
 
+    # Add player direction tracking
+    player_direction = (0, 0)
+    
+    # Add scatter mode timing
+    scatter_timer = 0
+    SCATTER_INTERVAL = 200  # Alternate between scatter and chase every 200 frames
+
     running = True
     while running:
         for event in pygame.event.get():
@@ -71,23 +78,37 @@ def main():
                 running = False
             elif event.type == pygame.KEYDOWN:
                 new_pos = player_pos.copy()
-                # Support arrow keys and WASD keys.
+                # Update player direction based on key press
                 if event.key in [pygame.K_UP, pygame.K_w]:
                     new_pos[0] -= 1
+                    player_direction = (-1, 0)
                 elif event.key in [pygame.K_DOWN, pygame.K_s]:
                     new_pos[0] += 1
+                    player_direction = (1, 0)
                 elif event.key in [pygame.K_LEFT, pygame.K_a]:
                     new_pos[1] -= 1
+                    player_direction = (0, -1)
                 elif event.key in [pygame.K_RIGHT, pygame.K_d]:
                     new_pos[1] += 1
+                    player_direction = (0, 1)
                 if can_move_to(grid, tuple(new_pos)):
                     player_pos = new_pos
 
+        # Update scatter mode
+        scatter_timer = (scatter_timer + 1) % (2 * SCATTER_INTERVAL)
+        scatter_mode = scatter_timer >= SCATTER_INTERVAL
+
         # Update enemy paths and move them with delay
         ghost_move_delay = (ghost_move_delay + 1) % GHOST_MOVE_INTERVAL
-        if ghost_move_delay == 0:  # Only move ghosts every GHOST_MOVE_INTERVAL frames
+        if ghost_move_delay == 0:
+            # Update each ghost's behavior
             for ghost in ghosts:
-                path = compute_astar_path(grid, ghost.pos, tuple(player_pos))
+                ghost.scatter_mode = scatter_mode
+                # Get Blinky's position for Inky's behavior
+                blinky_pos = ghosts[0].pos if ghost.ghost_type != 'blinky' else None
+                # Get target based on ghost's individual behavior
+                target = ghost.get_chase_target(tuple(player_pos), player_direction, blinky_pos)
+                path = compute_astar_path(grid, ghost.pos, target)
                 if path and len(path) > 1:
                     ghost.set_final_path(path)
                     ghost.move_step()
