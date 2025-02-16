@@ -57,9 +57,9 @@ def main():
         for j in range(len(grid[0])):
             x = j * cell_size
             y = i * cell_size
-            if (i, j) == (18, 12):  # Position of 'C' in the map
+            if (i, j) == (18, 11):  # Position of 'C' in the map
                 player_pos = [i, j]
-            elif (i, j) in [(11, 8), (11, 9), (11, 15), (11, 16)]:  # Positions of 'M' in the map
+            elif (i, j) in [(11, 10), (11, 11), (11, 13), (11, 14)]:  # Positions of 'M' in the map
                 enemy_positions.append((i, j))
 
     player_color = (255, 255, 0)  # Yellow for player
@@ -167,22 +167,23 @@ def main():
         if debug_mode:
             for ghost in ghosts:
                 if ghost.path:
-                    # Draw path line
+                    # Fix coordinate order in points calculation
                     points = [(p[1] * cell_size + cell_size//2, p[0] * cell_size + cell_size//2) 
                              for p in ghost.path[ghost.path_index:]]
                     if len(points) > 1:
                         pygame.draw.lines(screen, ghost.color, False, points, 2)
-                    # Draw target point
+                    # Fix coordinate order in target position
                     target = ghost.get_chase_target(tuple(player_pos), player_direction, 
                                                   ghosts[0].pos if ghost.ghost_type != 'blinky' else None)
                     target_pos = (target[1] * cell_size + cell_size//2, 
                                 target[0] * cell_size + cell_size//2)
                     pygame.draw.circle(screen, ghost.color, target_pos, 5)
 
-        # Draw player.
+        # Draw player using consistent coordinate order (y before x)
         player_rect = pygame.Rect(player_pos[1]*cell_size, player_pos[0]*cell_size, cell_size, cell_size)
         pygame.draw.ellipse(screen, player_color, player_rect)
-        # Draw ghosts with their unique colors
+        
+        # Draw ghosts using consistent coordinate order
         for ghost in ghosts:
             ghost_rect = pygame.Rect(ghost.pos[1]*cell_size, ghost.pos[0]*cell_size, cell_size, cell_size)
             pygame.draw.ellipse(screen, ghost.color, ghost_rect)
