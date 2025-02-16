@@ -64,13 +64,21 @@ def main():
 
     player_color = (255, 255, 0)  # Yellow for player
 
-    # Create ghosts with proper types and correct map positions
+    # Create ghosts with proper types and correct map positions, but start them as inactive
     ghosts = [
-        Ghost((11, 9), 'blinky'),    # Red ghost - leftmost M
-        Ghost((11, 10), 'inky'),     # Cyan ghost - second M from left
-        Ghost((11, 12), 'pinky'),    # Pink ghost - third M from left
-        Ghost((11, 13), 'clyde'),    # Orange ghost - rightmost M
+        Ghost((11, 9), 'blinky'),    # Red ghost - releases first
+        Ghost((11, 10), 'inky'),     # Cyan ghost - releases second
+        Ghost((11, 12), 'pinky'),    # Pink ghost - releases third
+        Ghost((11, 13), 'clyde'),    # Orange ghost - releases last
     ]
+
+    # Set initial active state for ghosts
+    for ghost in ghosts:
+        ghost.active = False
+    
+    # Ghost release timing (in frames)
+    ghost_release_times = [0, 300, 600, 900]  # Release every 10 seconds (at 30fps)
+    game_timer = 0
 
     # Add player direction tracking
     player_direction = (0, 0)
@@ -114,11 +122,21 @@ def main():
         scatter_timer = (scatter_timer + 1) % (2 * SCATTER_INTERVAL)
         scatter_mode = scatter_timer >= SCATTER_INTERVAL
 
+        # Update game timer and check for ghost releases
+        game_timer += 1
+        for i, release_time in enumerate(ghost_release_times):
+            if game_timer >= release_time and not ghosts[i].active:
+                ghosts[i].active = True
+
         # Update enemy paths and move them with delay
         ghost_move_delay = (ghost_move_delay + 1) % GHOST_MOVE_INTERVAL
         if ghost_move_delay == 0:
             # Update each ghost's behavior
             for ghost in ghosts:
+                # Only move ghost if it's active
+                if not ghost.active:
+                    continue
+                    
                 ghost.scatter_mode = scatter_mode
                 # Get Blinky's position for Inky's behavior
                 blinky_pos = ghosts[0].pos if ghost.ghost_type != 'blinky' else None
@@ -185,8 +203,9 @@ def main():
         
         # Draw ghosts using consistent coordinate order
         for ghost in ghosts:
-            ghost_rect = pygame.Rect(ghost.pos[1]*cell_size, ghost.pos[0]*cell_size, cell_size, cell_size)
-            pygame.draw.ellipse(screen, ghost.color, ghost_rect)
+            if ghost.active:  # Only draw active ghosts
+                ghost_rect = pygame.Rect(ghost.pos[1]*cell_size, ghost.pos[0]*cell_size, cell_size, cell_size)
+                pygame.draw.ellipse(screen, ghost.color, ghost_rect)
 
         # Draw debug mode status
         font = pygame.font.Font(None, 36)
