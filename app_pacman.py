@@ -33,6 +33,10 @@ def main():
     screen = pygame.display.set_mode((width, height))
     pygame.display.set_caption("Pacman with AI Enemies")
     clock = pygame.time.Clock()
+    
+    # Add ghost movement delay counter
+    ghost_move_delay = 0
+    GHOST_MOVE_INTERVAL = 6  # Ghosts move every 3 frames
 
     grid, _ = create_grid()
     
@@ -73,12 +77,15 @@ def main():
                 if can_move_to(grid, tuple(new_pos)):
                     player_pos = new_pos
 
-        # Update enemy paths and move them.
-        for enemy in enemies:
-            path = compute_astar_path(grid, enemy.pos, tuple(player_pos))
-            if path and len(path) > 1:
-                enemy.set_final_path(path)
-                enemy.move_step()
+        # Update enemy paths and move them with delay
+        ghost_move_delay = (ghost_move_delay + 1) % GHOST_MOVE_INTERVAL
+        if ghost_move_delay == 0:  # Only move ghosts every GHOST_MOVE_INTERVAL frames
+            for enemy in enemies:
+                path = compute_astar_path(grid, enemy.pos, tuple(player_pos))
+                if path and len(path) > 1:
+                    enemy.set_final_path(path)
+                    enemy.move_step()
+                    
         # Render scene.
         screen.fill((0, 0, 0))
         # Draw grid.
@@ -106,7 +113,7 @@ def main():
             enemy_rect = pygame.Rect(enemy.pos[1]*cell_size, enemy.pos[0]*cell_size, cell_size, cell_size)
             pygame.draw.ellipse(screen, enemy_color, enemy_rect)
         pygame.display.flip()
-        clock.tick(10)
+        clock.tick(30)  # Increased from 10 to 30 for smoother player movement
     pygame.quit()
 
 if __name__ == '__main__':
