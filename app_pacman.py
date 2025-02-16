@@ -67,8 +67,8 @@ def main():
     # Create ghosts with proper types and correct map positions
     ghosts = [
         Ghost((11, 9), 'blinky'),    # Red ghost - leftmost M
-        Ghost((11, 10), 'pinky'),    # Pink ghost - second M from left
-        Ghost((11, 12), 'inky'),     # Cyan ghost - third M from left
+        Ghost((11, 10), 'inky'),     # Cyan ghost - second M from left
+        Ghost((11, 12), 'pinky'),    # Pink ghost - third M from left
         Ghost((11, 13), 'clyde'),    # Orange ghost - rightmost M
     ]
 
