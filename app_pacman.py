@@ -5,6 +5,35 @@ from modules.algorithms import heuristic, astar_step
 from modules.ghost import Ghost  # Change this import
 
 def compute_astar_path(grid: List[List[int]], start: Tuple[int,int], goal: Tuple[int,int]) -> List[Tuple[int,int]]:
+    # Handle tunnel pathfinding
+    if start[0] == 11 and goal[0] == 11:  # If both on tunnel row
+        left_path = []
+        right_path = []
+        direct_path = []
+        
+        # Generate direct path
+        if start[1] < goal[1]:
+            direct_path = [(11, j) for j in range(start[1], goal[1] + 1)]
+        else:
+            direct_path = [(11, j) for j in range(start[1], goal[1] - 1, -1)]
+            
+        # Generate left tunnel path
+        if start[1] >= goal[1]:
+            left_path = ([(11, j) for j in range(start[1], -1, -1)] + 
+                        [(11, 22)] +  # Jump to right side
+                        [(11, j) for j in range(21, goal[1] - 1, -1)])
+            
+        # Generate right tunnel path
+        if start[1] <= goal[1]:
+            right_path = ([(11, j) for j in range(start[1], 23)] + 
+                         [(11, 0)] +  # Jump to left side
+                         [(11, j) for j in range(1, goal[1] + 1)])
+            
+        # Choose shortest valid path
+        paths = [p for p in [direct_path, left_path, right_path] if p]
+        return min(paths, key=len) if paths else [start]
+    
+    # Normal A* pathfinding
     open_list = [(heuristic(start, goal), start)]
     closed_set = set()
     came_from = {}
@@ -117,32 +146,30 @@ def main():
         # Update enemy paths and move them with delay
         ghost_move_delay = (ghost_move_delay + 1) % GHOST_MOVE_INTERVAL
         if ghost_move_delay == 0:
-            # Update each ghost's behavior
             for ghost in ghosts:
                 ghost.scatter_mode = scatter_mode
-                # Get Blinky's position for Inky's behavior
                 blinky_pos = ghosts[0].pos if ghost.ghost_type != 'blinky' else None
-                # Get target based on ghost's individual behavior
                 target = ghost.get_chase_target(tuple(player_pos), player_direction, blinky_pos)
                 
-                # Only compute new path if ghost has reached end of current path or has no path
-                if not ghost.path or ghost.path_index >= len(ghost.path) - 1:
+                # Always recompute path if in tunnel row
+                if ghost.pos[0] == 11 or (ghost.path and ghost.path_index >= len(ghost.path) - 1):
                     path = compute_astar_path(grid, ghost.pos, target)
                     if path and len(path) > 1:
                         ghost.set_final_path(path)
                 
-                # Always try to move if we have a path
                 if ghost.path and ghost.path_index < len(ghost.path) - 1:
                     next_pos = ghost.path[ghost.path_index + 1]
                     can_move, new_position = can_move_to(grid, next_pos)
                     if can_move:
-                        if new_position:  # Instant wrap around
+                        if new_position:  # Handle tunnel transition
                             ghost.pos = new_position
-                            # Update the rest of the path to account for the wrap
-                            if ghost.path_index + 2 < len(ghost.path):
-                                ghost.path = ghost.path[:ghost.path_index + 1] + [new_position] + ghost.path[ghost.path_index + 2:]
-                        ghost.move_step()
-                    
+                            # Force path recalculation after tunneling
+                            path = compute_astar_path(grid, new_position, target)
+                            if path:
+                                ghost.set_final_path(path)
+                        else:
+                            ghost.move_step()
+
         # Render scene.
         screen.fill((0, 0, 0))
         # Draw grid.
