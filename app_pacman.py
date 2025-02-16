@@ -39,8 +39,8 @@ def main():
     player_pos = [7, 7]
     player_color = (255, 255, 0)  # Yellow for player
 
-    # Create 4 enemy agents at corners.
-    enemy_positions = [(0,0), (0,14), (14,0), (14,14)]
+    # Create 4 enemy agents at valid positions within the maze.
+    enemy_positions = [(1,1), (1,13), (13,1), (13,13)]
     enemies = [PathAgent(pos) for pos in enemy_positions]
     enemy_color = (255, 0, 0)  # Red for enemies
 
