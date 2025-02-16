@@ -74,8 +74,12 @@ class Maze2DVisualizer:
         self.ui_background = pygame.Surface((400, 200), pygame.SRCALPHA)
         self.ui_background.fill((0, 0, 0, 180))
 
+        self.exploration_path_astar = []
+        self.exploration_path_dijkstra = []
+
     def draw_grid(self, offset_x: int, grid: List[List[int]], visited: set,
-                 path: List[Tuple[int, int]], agent: PathAgent) -> None:
+                 path: List[Tuple[int, int]], agent: PathAgent, 
+                 exploration_path: List[Tuple[int, int]]) -> None:
         for i in range(len(grid)):
             for j in range(len(grid[0])):
                 x = j * self.cell_size + offset_x
@@ -104,7 +108,7 @@ class Maze2DVisualizer:
                     s.set_alpha(128)
                     s.fill((255, 255, 0))
                     self.screen.blit(s, (x, y))
-                elif agent.exploring and path and (i, j) in path:
+                elif agent.exploring and exploration_path and (i, j) in exploration_path:
                     # Current best path in magenta during exploration
                     s = pygame.Surface((self.cell_size, self.cell_size))
                     s.set_alpha(128)
@@ -166,12 +170,14 @@ class Maze2DVisualizer:
         # Draw A* grid and info
         astar_x = grid_offset
         self.draw_grid(astar_x, self.grid, self.astar_closed,
-                      self.astar_path, self.agent_astar)
+                      self.astar_path, self.agent_astar,
+                      self.exploration_path_astar)
         
         # Draw Dijkstra grid and info
         dijkstra_x = astar_x + (15 * self.cell_size) + 200
         self.draw_grid(dijkstra_x, self.grid, self.dijkstra_closed,
-                      self.dijkstra_path, self.agent_dijkstra)
+                      self.dijkstra_path, self.agent_dijkstra,
+                      self.exploration_path_dijkstra)
 
         # Draw statistics and labels at the bottom
         stats_y = self.height - 120
@@ -254,6 +260,8 @@ class Maze2DVisualizer:
         self.accumulated_time = 0.0
         self.astar_time = 0.0
         self.dijkstra_time = 0.0
+        self.exploration_path_astar = []
+        self.exploration_path_dijkstra = []
 
     def update(self) -> None:
         if not self.is_running:
@@ -290,6 +298,8 @@ class Maze2DVisualizer:
                 self.astar_came_from, self.astar_g_score
             )
             self.agent_astar.set_exploration_path(current, came_from)
+            if path:  # Update current best path
+                self.exploration_path_astar = path
             
             if is_complete:
                 self.astar_done = True
@@ -305,6 +315,8 @@ class Maze2DVisualizer:
                 self.dijkstra_came_from, self.dijkstra_g_score
             )
             self.agent_dijkstra.set_exploration_path(current, came_from)
+            if path:  # Update current best path
+                self.exploration_path_dijkstra = path
             
             if is_complete:
                 self.dijkstra_done = True
