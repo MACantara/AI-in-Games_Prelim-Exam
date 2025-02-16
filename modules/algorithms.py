@@ -5,87 +5,56 @@ import heapq
 from typing import Tuple, List, Dict, Generator, Any
 
 # Type aliases for clarity.
-Point = Tuple[int, int]
+Position = Tuple[int, int]
 Grid = List[List[int]]
-CameFrom = Dict[Point, Point]
-GScore = Dict[Point, float]
 
-def heuristic(a: Tuple[int, int], b: Tuple[int, int]) -> float:
-    # Special case for tunnel row
-    if a[0] == 11 and b[0] == 11:
-        # Calculate both direct and tunnel distances
+def heuristic(a: Position, b: Position) -> float:
+    """Calculate heuristic distance between two points."""
+    if a[0] == 11 and b[0] == 11:  # Special case for tunnel
         direct_dist = abs(a[1] - b[1])
-        tunnel_dist = min(
-            a[1] + b[1],  # Distance through left tunnel
-            (23 - a[1]) + (23 - b[1])  # Distance through right tunnel
-        )
+        tunnel_dist = min(a[1] + b[1], (23 - a[1]) + (23 - b[1]))
         return min(direct_dist, tunnel_dist)
-    
-    # Normal Manhattan distance for non-tunnel paths
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
-def neighbors(pos: Point, grid: Grid) -> Generator[Tuple[Point, int], None, None]:
-    """Yield valid neighbor cells and their cost."""
-    x, y = pos
+def get_neighbors(pos: Position, grid: Grid) -> Generator[Tuple[Position, int], None, None]:
+    """Get valid neighboring positions and their movement costs."""
     for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-        nx, ny = x + dx, y + dy
+        nx, ny = pos[0] + dx, pos[1] + dy
         if 0 <= nx < len(grid) and 0 <= ny < len(grid[0]) and grid[nx][ny] != 1:
-            yield (nx, ny), (2 if grid[nx][ny] == 2 else 1)
+            yield (nx, ny), 1
 
-def reconstruct_path(came_from: CameFrom, current: Point) -> List[Point]:
-    """Reconstruct path from start to current."""
+def reconstruct_path(came_from: Dict[Position, Position], current: Position) -> List[Position]:
+    """Reconstruct path from start to current position."""
     path = [current]
     while current in came_from:
         current = came_from[current]
         path.append(current)
     return path[::-1]
 
-def astar_step(grid: Grid, start: Point, goal: Point, open_set: List[Any],
-               closed_set: set, came_from: CameFrom, g_score: GScore
-              ) -> Tuple[Any, bool, Any, CameFrom]:
-    """Perform one A* algorithm step and return current best candidate path."""
-    if not open_set:
-        return None, True, None, {}
+def astar_path(grid: Grid, start: Position, goal: Position) -> List[Position]:
+    """Find path using A* algorithm."""
+    open_set = [(0, start)]
+    closed_set = set()
+    came_from = {}
+    g_score = {start: 0}
     
-    current_f, current = heapq.heappop(open_set)
-    if current == goal:
-        return current, True, reconstruct_path(came_from, current), came_from
+    while open_set:
+        _, current = heapq.heappop(open_set)
+        
+        if current == goal:
+            return reconstruct_path(came_from, current)
+            
+        closed_set.add(current)
+        
+        for neighbor, cost in get_neighbors(current, grid):
+            if neighbor in closed_set:
+                continue
+                
+            tentative_g = g_score[current] + cost
+            if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                came_from[neighbor] = current
+                g_score[neighbor] = tentative_g
+                f_score = tentative_g + heuristic(neighbor, goal)
+                heapq.heappush(open_set, (f_score, neighbor))
     
-    closed_set.add(current)
-    
-    for neighbor, cost in neighbors(current, grid):
-        if neighbor in closed_set:
-            continue
-        tentative_g = g_score[current] + cost
-        if neighbor not in g_score or tentative_g < g_score[neighbor]:
-            came_from[neighbor] = current
-            g_score[neighbor] = tentative_g
-            heapq.heappush(open_set, (tentative_g + heuristic(neighbor, goal), neighbor))
-    
-    best_path = reconstruct_path(came_from, current)
-    return current, False, best_path, came_from
-
-def dijkstra_step(grid: Grid, start: Point, goal: Point, open_set: List[Any],
-                  closed_set: set, came_from: CameFrom, g_score: GScore
-                 ) -> Tuple[Any, bool, Any, CameFrom]:
-    """Perform one Dijkstra algorithm step and return current best candidate path."""
-    if not open_set:
-        return None, True, None, {}
-    
-    current_g, current = heapq.heappop(open_set)
-    if current == goal:
-        return current, True, reconstruct_path(came_from, current), came_from
-    
-    closed_set.add(current)
-    
-    for neighbor, cost in neighbors(current, grid):
-        if neighbor in closed_set:
-            continue
-        tentative_g = g_score[current] + cost
-        if neighbor not in g_score or tentative_g < g_score[neighbor]:
-            came_from[neighbor] = current
-            g_score[neighbor] = tentative_g
-            heapq.heappush(open_set, (tentative_g, neighbor))
-    
-    best_path = reconstruct_path(came_from, current)
-    return current, False, best_path, came_from
+    return [start]  # Return single-point path if no path found
