@@ -20,11 +20,19 @@ def compute_astar_path(grid: List[List[int]], start: Tuple[int,int], goal: Tuple
         return [start]
     return path
 
-def can_move_to(grid: List[List[int]], pos: Tuple[int,int]) -> bool:
+def can_move_to(grid: List[List[int]], pos: Tuple[int,int]) -> Tuple[bool, Tuple[int,int]]:
     i, j = pos
+    # Check for tunnel wrap-around at row 11 (where the tunnel is)
+    if i == 11:  # Middle tunnel row
+        if j < 0:  # Going through left tunnel
+            return True, (i, len(grid[0])-2)  # Wrap to second-to-last position on right
+        elif j > len(grid[0])-2:  # Going through right tunnel
+            return True, (i, 0)  # Wrap to first position on left
+    
+    # Normal boundary and wall checks
     if i < 0 or i >= len(grid) or j < 0 or j >= len(grid[0]):
-        return False
-    return grid[i][j] != 1
+        return False, None
+    return (grid[i][j] != 1), None
 
 def main():
     pygame.init()
@@ -91,8 +99,10 @@ def main():
                 elif event.key in [pygame.K_RIGHT, pygame.K_d]:
                     new_pos[1] += 1
                     player_direction = (0, 1)
-                if can_move_to(grid, tuple(new_pos)):
-                    player_pos = new_pos
+                
+                can_move, new_position = can_move_to(grid, tuple(new_pos))
+                if can_move:
+                    player_pos = list(new_position if new_position else new_pos)
 
         # Update scatter mode
         scatter_timer = (scatter_timer + 1) % (2 * SCATTER_INTERVAL)
@@ -117,7 +127,15 @@ def main():
                 
                 # Always try to move if we have a path
                 if ghost.path and ghost.path_index < len(ghost.path) - 1:
-                    ghost.move_step()
+                    next_pos = ghost.path[ghost.path_index + 1]
+                    can_move, new_position = can_move_to(grid, next_pos)
+                    if can_move:
+                        if new_position:  # Instant wrap around
+                            ghost.pos = new_position
+                            # Update the rest of the path to account for the wrap
+                            if ghost.path_index + 2 < len(ghost.path):
+                                ghost.path = ghost.path[:ghost.path_index + 1] + [new_position] + ghost.path[ghost.path_index + 2:]
+                        ghost.move_step()
                     
         # Render scene.
         screen.fill((0, 0, 0))
