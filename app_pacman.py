@@ -28,19 +28,19 @@ def can_move_to(grid: List[List[int]], pos: Tuple[int,int]) -> bool:
 
 def main():
     pygame.init()
-    cell_size = 40
-    width, height = 15 * cell_size, 15 * cell_size
+    cell_size = 30  # Smaller cells to fit 25x25 grid
+    width, height = 23 * cell_size, 23 * cell_size
     screen = pygame.display.set_mode((width, height))
     pygame.display.set_caption("Pacman with AI Enemies")
     clock = pygame.time.Clock()
 
     grid, _ = create_grid()
-    # Player starts in the center.
-    player_pos = [7, 7]
+    # Player starts in middle of 25x25 grid
+    player_pos = [12, 12]
     player_color = (255, 255, 0)  # Yellow for player
 
-    # Create 4 enemy agents at valid positions within the maze.
-    enemy_positions = [(1,1), (1,13), (13,1), (13,13)]
+    # Create 4 enemy agents at valid positions within the larger maze
+    enemy_positions = [(1,1), (1,23), (23,1), (23,23)]
     enemies = [PathAgent(pos) for pos in enemy_positions]
     enemy_color = (255, 0, 0)  # Red for enemies
 
@@ -77,14 +77,17 @@ def main():
                 x = j * cell_size
                 y = i * cell_size
                 rect = pygame.Rect(x, y, cell_size, cell_size)
-                if grid[i][j] == 1:
+                if grid[i][j] == 1:  # Wall
                     color = (51,51,51)
-                elif grid[i][j] == 2:
-                    color = (153,76,0)
-                else:
-                    color = (200, 200, 200)
-                pygame.draw.rect(screen, color, rect)
-                pygame.draw.rect(screen, (100,100,100), rect, 1)
+                    pygame.draw.rect(screen, color, rect)
+                else:  # Empty space or point
+                    color = (0, 0, 0)  # Black background
+                    pygame.draw.rect(screen, color, rect)
+                    if grid[i][j] == 2:  # Point
+                        # Draw small yellow dot
+                        dot_size = cell_size // 4
+                        dot_pos = (x + cell_size//2, y + cell_size//2)
+                        pygame.draw.circle(screen, (255, 255, 0), dot_pos, dot_size)
         # Draw player.
         player_rect = pygame.Rect(player_pos[1]*cell_size, player_pos[0]*cell_size, cell_size, cell_size)
         pygame.draw.ellipse(screen, player_color, player_rect)
