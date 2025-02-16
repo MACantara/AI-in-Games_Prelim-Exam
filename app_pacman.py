@@ -203,9 +203,9 @@ def main():
         
         # Draw ghosts using consistent coordinate order
         for ghost in ghosts:
-            if ghost.active:  # Only draw active ghosts
-                ghost_rect = pygame.Rect(ghost.pos[1]*cell_size, ghost.pos[0]*cell_size, cell_size, cell_size)
-                pygame.draw.ellipse(screen, ghost.color, ghost_rect)
+            # Remove the active check here to always show ghosts
+            ghost_rect = pygame.Rect(ghost.pos[1]*cell_size, ghost.pos[0]*cell_size, cell_size, cell_size)
+            pygame.draw.ellipse(screen, ghost.color, ghost_rect)
 
         # Draw debug mode status
         font = pygame.font.Font(None, 36)
