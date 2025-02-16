@@ -10,39 +10,44 @@ class PathAgent:
         self.path_index: int = 0
         self.moving: bool = False
         self.exploring: bool = True
-        self.height: float = 0.0
-        self.target_height: float = 0.0
-        self.height_speed: float = 0.1
+        self.mouth_open = True
+        self.animation_time = 0
+        self.direction = 0  # 0: right, 90: down, 180: left, 270: up
         
     def set_exploration_path(self, current: Point, came_from: Dict[Point, Point]) -> None:
         if not current:
             return
-        # Update using the best candidate path.
         self.path = reconstruct_path(came_from, current)
         self.path_index = len(self.path) - 1
         self.pos = current
-        self.target_height = 0.3
         
     def set_final_path(self, path: List[Point]) -> None:
         self.path = path
         self.path_index = 0
         self.moving = True
         self.exploring = False
-        self.target_height = 0.5
+        self.direction = 0  # Reset direction when new path is set
         
     def move_step(self) -> bool:
-        if self.height < self.target_height:
-            self.height = min(self.height + self.height_speed, self.target_height)
-        elif self.height > self.target_height:
-            self.height = max(self.height - self.height_speed, self.target_height)
-            
         if self.moving and self.path_index < len(self.path) - 1:
+            old_pos = self.pos
             self.path_index += 1
             self.pos = self.path[self.path_index]
+            
+            # Calculate direction based on movement
+            dx = self.pos[1] - old_pos[1]  # Column difference (x-axis)
+            dy = self.pos[0] - old_pos[0]  # Row difference (y-axis)
+            
+            if dx > 0:  # Moving right
+                self.direction = 0
+            elif dx < 0:  # Moving left
+                self.direction = 180
+            elif dy > 0:  # Moving down
+                self.direction = 90
+            elif dy < 0:  # Moving up
+                self.direction = 270
+                
+            self.mouth_open = not self.mouth_open
             return True
         self.moving = False
         return False
-
-    def get_3d_position(self) -> Tuple[int, float, int]:
-        x, y = self.pos
-        return (x, self.height, y)
