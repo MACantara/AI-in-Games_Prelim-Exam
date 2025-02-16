@@ -64,8 +64,8 @@ class Maze2DVisualizer:
         self.pacman_open_original = self.pacman_open.copy()
         self.pacman_closed_original = self.pacman_closed.copy()
         
-        self.animation_speed = 200  # milliseconds per frame for mouth animation
-        self.movement_delay = 350   # milliseconds between moves
+        self.animation_speed = 50  # milliseconds per frame for mouth animation
+        self.movement_delay = 100   # milliseconds between moves
         self.last_animation = pygame.time.get_ticks()
         self.last_movement = pygame.time.get_ticks()
 
