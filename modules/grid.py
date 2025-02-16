@@ -31,7 +31,7 @@ def create_grid() -> Tuple[List[List[int]], List[List[float]]]:
         
         # Central maze patterns
         (6, 6), (6, 7), (6, 8), (6, 9),
-        (7, 6), (8, 6), (8, 7), (8, 8),
+        (8, 6), (8, 7), (8, 8),
         (7, 8), (7, 9), (7, 10),
         
         # Additional obstacles for complexity
