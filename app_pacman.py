@@ -64,12 +64,12 @@ def main():
 
     player_color = (255, 255, 0)  # Yellow for player
 
-    # Create ghosts with proper types instead of generic PathAgents
+    # Create ghosts with proper types and correct map positions
     ghosts = [
-        Ghost((11, 8), 'blinky'),   # Red ghost
-        Ghost((11, 9), 'pinky'),    # Pink ghost
-        Ghost((11, 15), 'inky'),    # Cyan ghost
-        Ghost((11, 16), 'clyde'),   # Orange ghost
+        Ghost((11, 9), 'blinky'),    # Red ghost - leftmost M
+        Ghost((11, 10), 'pinky'),    # Pink ghost - second M from left
+        Ghost((11, 12), 'inky'),     # Cyan ghost - third M from left
+        Ghost((11, 13), 'clyde'),    # Orange ghost - rightmost M
     ]
 
     # Add player direction tracking
