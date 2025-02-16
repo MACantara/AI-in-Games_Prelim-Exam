@@ -15,9 +15,20 @@ class PathAgent:
 
     def set_path(self, path: List[Position]) -> None:
         """Set a new path for the agent to follow."""
-        self.path = path
-        self.path_index = 0
-        self.moving = bool(path)
+        if not path:
+            return
+        
+        # Keep current position if already moving
+        if self.moving and self.path:
+            # Only update path if it's significantly different
+            if len(path) > 1 and path[1] != self.path[min(self.path_index + 1, len(self.path) - 1)]:
+                self.path = path
+                self.path_index = 0
+        else:
+            self.path = path
+            self.path_index = 0
+            
+        self.moving = True
 
     def move_step(self) -> bool:
         """Move one step along the current path. Returns True if moved."""
