@@ -1,4 +1,5 @@
 import pygame
+import math
 from typing import Tuple, List
 
 class Player:
@@ -15,6 +16,11 @@ class Player:
         self.dot_points = 10
         self.power_pellet_points = 50
         
+        # Simplified animation properties - just alternating between open and closed
+        self.mouth_open = True  # Start with open mouth
+        self.animation_counter = 0
+        self.animation_speed = 5  # Lower = faster animation
+        
     def handle_key_input(self, key: int) -> None:
         """Handle keyboard input for player direction changes."""
         # Store the requested direction but don't change actual direction yet
@@ -29,6 +35,9 @@ class Player:
     
     def update_position(self, grid: List[List[int]]) -> None:
         """Update player position based on current direction."""
+        # Update mouth animation every frame for smoother animation
+        self._update_animation()
+        
         # Control movement speed
         self.move_delay = (self.move_delay + 1) % self.move_speed
         if self.move_delay != 0:
@@ -56,6 +65,14 @@ class Player:
         if self._can_move_to(tuple(current_pos), grid):
             self._move_and_collect_dot(current_pos, grid)
     
+    def _update_animation(self) -> None:
+        """Update the mouth animation state - simple open/close toggle."""
+        self.animation_counter = (self.animation_counter + 1) % self.animation_speed
+        
+        # Only change state when counter resets
+        if self.animation_counter == 0:
+            self.mouth_open = not self.mouth_open
+    
     def _move_and_collect_dot(self, new_pos: List[int], grid: List[List[int]]) -> None:
         """Move to the new position and collect a dot if present."""
         row, col = new_pos
@@ -80,10 +97,44 @@ class Player:
                 grid[i][j] != 1)
     
     def draw(self, screen, cell_size: int) -> None:
-        """Draw the player (Pacman)."""
-        player_rect = pygame.Rect(
-            self.pos[1] * cell_size,
-            self.pos[0] * cell_size,
-            cell_size, cell_size
-        )
-        pygame.draw.ellipse(screen, (255, 255, 0), player_rect)
+        """Draw the player (Pacman) with animated mouth."""
+        # Calculate center point and radius
+        center_x = self.pos[1] * cell_size + cell_size // 2
+        center_y = self.pos[0] * cell_size + cell_size // 2
+        radius = cell_size // 2 - 1  # Slightly smaller for better visibility
+        
+        # Calculate mouth angles based on direction
+        # Default to right if not moving
+        facing_direction = self.direction if self.direction != (0, 0) else (0, 1)
+        
+        angle_offset = 0
+        if facing_direction == (0, -1):  # Left
+            angle_offset = 180
+        elif facing_direction == (-1, 0):  # Up
+            angle_offset = 90
+        elif facing_direction == (1, 0):  # Down
+            angle_offset = 270
+        # Right is default (offset = 0)
+        
+        # Set fixed mouth angles - either fully open or closed
+        mouth_angle = 45 if self.mouth_open else 0
+        
+        # Draw the complete pacman
+        if mouth_angle == 0:
+            # Closed mouth - just a yellow circle
+            pygame.draw.circle(screen, (255, 255, 0), (center_x, center_y), radius)
+        else:
+            # Open mouth - circle with a wedge cut out
+            start_angle = math.radians(angle_offset - mouth_angle)
+            end_angle = math.radians(angle_offset + mouth_angle)
+            
+            # Draw the main yellow circle
+            pygame.draw.circle(screen, (255, 255, 0), (center_x, center_y), radius)
+            
+            # Draw the mouth cutout as a black triangle
+            points = [
+                (center_x, center_y),
+                (center_x + radius * math.cos(start_angle), center_y + radius * math.sin(start_angle)),
+                (center_x + radius * math.cos(end_angle), center_y + radius * math.sin(end_angle))
+            ]
+            pygame.draw.polygon(screen, (0, 0, 0), points)
