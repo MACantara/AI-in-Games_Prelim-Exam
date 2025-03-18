@@ -132,22 +132,26 @@ class Ghost(PathAgent):
         # Draw the ghost as a single polygon
         pygame.draw.polygon(screen, self.color, ghost_points)
         
-        # Calculate eye positions
-        eye_radius = cell_size // 5
-        left_eye_pos = (
+        # Draw eyes as perfect circles
+        eye_size = cell_size // 7
+        
+        # Left eye position - more centered horizontally
+        left_eye_center = (
             self.pos[1] * cell_size + cell_size // 3,
             self.pos[0] * cell_size + cell_size // 3
         )
-        right_eye_pos = (
+        
+        # Right eye position - more centered horizontally
+        right_eye_center = (
             self.pos[1] * cell_size + cell_size * 2 // 3,
             self.pos[0] * cell_size + cell_size // 3
         )
         
-        # Draw eyes (white circles)
-        pygame.draw.circle(screen, (255, 255, 255), left_eye_pos, eye_radius)
-        pygame.draw.circle(screen, (255, 255, 255), right_eye_pos, eye_radius)
+        # Draw white part of eyes
+        pygame.draw.circle(screen, (255, 255, 255), left_eye_center, eye_size)
+        pygame.draw.circle(screen, (255, 255, 255), right_eye_center, eye_size)
         
-        # Determine pupil positions based on current direction
+        # Determine pupil direction
         direction = (0, 0)
         if self.path and len(self.path) > self.path_index + 1:
             next_pos = self.path[self.path_index + 1]
@@ -156,26 +160,27 @@ class Ghost(PathAgent):
         # Calculate pupil offset based on direction
         pupil_offset_x = 0
         pupil_offset_y = 0
+        pupil_move_distance = eye_size // 2
         
         if direction[0] < 0:  # Moving up
-            pupil_offset_y = -eye_radius // 2
+            pupil_offset_y = -pupil_move_distance
         elif direction[0] > 0:  # Moving down
-            pupil_offset_y = eye_radius // 2
+            pupil_offset_y = pupil_move_distance
         elif direction[1] < 0:  # Moving left
-            pupil_offset_x = -eye_radius // 2
+            pupil_offset_x = -pupil_move_distance
         elif direction[1] > 0:  # Moving right
-            pupil_offset_x = eye_radius // 2
+            pupil_offset_x = pupil_move_distance
         
-        # Draw pupils (blue circles)
-        pupil_radius = eye_radius // 2
+        # Draw pupils as smaller circles
+        pupil_size = eye_size // 2
         pygame.draw.circle(screen, (0, 0, 255), 
-                         (left_eye_pos[0] + pupil_offset_x, 
-                          left_eye_pos[1] + pupil_offset_y), 
-                         pupil_radius)
+                         (left_eye_center[0] + pupil_offset_x, 
+                          left_eye_center[1] + pupil_offset_y), 
+                         pupil_size)
         pygame.draw.circle(screen, (0, 0, 255), 
-                         (right_eye_pos[0] + pupil_offset_x, 
-                          right_eye_pos[1] + pupil_offset_y), 
-                         pupil_radius)
+                         (right_eye_center[0] + pupil_offset_x, 
+                          right_eye_center[1] + pupil_offset_y), 
+                         pupil_size)
 
     @classmethod
     def update_all_ghosts(cls, ghosts: List['Ghost'], grid: List[List[int]], 
