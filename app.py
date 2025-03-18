@@ -14,6 +14,9 @@ class PacmanGame:
         self.clock = pygame.time.Clock()
         self.state = GameState.create_new_game()
         self.ghost_move_delay = 0
+        self.score = 0  # Initialize player score
+        self.dot_points = 10  # Points for eating a regular dot
+        self.power_pellet_points = 50  # Points for eating a power pellet (not implemented yet)
         
     def handle_input(self) -> bool:
         """Handle user input. Returns False if game should quit."""
@@ -47,6 +50,12 @@ class PacmanGame:
             new_direction = (0, 1)
             
         if self._can_move_to(tuple(new_pos)):
+            # Check if player is collecting a dot
+            row, col = new_pos
+            if self.state.grid[row][col] == 2:  # If it's a dot
+                self.state.grid[row][col] = 0  # Remove the dot
+                self.score += self.dot_points  # Increase score
+                
             self.state.player_pos = new_pos
             self.state.player_direction = new_direction
             
@@ -99,6 +108,7 @@ class PacmanGame:
         self.screen.fill((0, 0, 0))
         self._draw_grid()
         self._draw_entities()
+        self._draw_score()  # Add score display
         self._draw_debug_info()
         pygame.display.flip()
         
@@ -131,6 +141,12 @@ class PacmanGame:
         for ghost in self.state.ghosts:
             ghost.draw(self.screen, self.cell_size)
             
+    def _draw_score(self) -> None:
+        """Display the current score on screen."""
+        font = pygame.font.Font(None, 36)
+        score_text = font.render(f"Score: {self.score}", True, (255, 255, 255))
+        self.screen.blit(score_text, (10, 10))
+        
     def _draw_debug_info(self) -> None:
         """Draw debug information if debug mode is enabled."""
         if not self.state.debug_mode:
