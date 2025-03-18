@@ -17,6 +17,8 @@ class PacmanGame:
         self.score = 0  # Initialize player score
         self.dot_points = 10  # Points for eating a regular dot
         self.power_pellet_points = 50  # Points for eating a power pellet (not implemented yet)
+        self.player_move_delay = 0  # Control player movement speed
+        self.player_move_speed = 5  # Lower = faster movement (frames to wait)
         
     def handle_input(self) -> bool:
         """Handle user input. Returns False if game should quit."""
@@ -33,31 +35,15 @@ class PacmanGame:
             self.state.debug_mode = not self.state.debug_mode
             return
             
-        new_pos = self.state.player_pos.copy()
-        new_direction = self.state.player_direction
-        
+        # Just set direction based on key press, actual movement happens in update()
         if key in (pygame.K_UP, pygame.K_w):
-            new_pos[0] -= 1
-            new_direction = (-1, 0)
+            self.state.player_direction = (-1, 0)
         elif key in (pygame.K_DOWN, pygame.K_s):
-            new_pos[0] += 1
-            new_direction = (1, 0)
+            self.state.player_direction = (1, 0)
         elif key in (pygame.K_LEFT, pygame.K_a):
-            new_pos[1] -= 1
-            new_direction = (0, -1)
+            self.state.player_direction = (0, -1)
         elif key in (pygame.K_RIGHT, pygame.K_d):
-            new_pos[1] += 1
-            new_direction = (0, 1)
-            
-        if self._can_move_to(tuple(new_pos)):
-            # Check if player is collecting a dot
-            row, col = new_pos
-            if self.state.grid[row][col] == 2:  # If it's a dot
-                self.state.grid[row][col] = 0  # Remove the dot
-                self.score += self.dot_points  # Increase score
-                
-            self.state.player_pos = new_pos
-            self.state.player_direction = new_direction
+            self.state.player_direction = (0, 1)
             
     def _can_move_to(self, pos: Tuple[int, int]) -> bool:
         """Check if movement to position is valid, handling tunnel wraparound."""
@@ -75,8 +61,38 @@ class PacmanGame:
                 
     def update(self) -> None:
         """Update game state."""
+        self._update_player_position()  # New method for player movement
         self.state.update()
         self._update_ghosts()
+        
+    def _update_player_position(self) -> None:
+        """Update player position based on current direction."""
+        # Control movement speed
+        self.player_move_delay = (self.player_move_delay + 1) % self.player_move_speed
+        if self.player_move_delay != 0:
+            return
+            
+        # Calculate new position based on current direction
+        new_pos = self.state.player_pos.copy()
+        dx, dy = self.state.player_direction
+        new_pos[0] += dx
+        new_pos[1] += dy
+        
+        # Try to move in the current direction
+        if self._can_move_to(tuple(new_pos)):
+            # Check if player is collecting a dot
+            row, col = new_pos
+            if self.state.grid[row][col] == 2:  # If it's a dot
+                self.state.grid[row][col] = 0  # Remove the dot
+                self.score += self.dot_points  # Increase score
+                
+            self.state.player_pos = new_pos
+        else:
+            # If we hit a wall, stop moving in that direction
+            # This is optional - you might want to keep the direction and just not move
+            # Uncomment the line below if you want to stop when hitting a wall
+            # self.state.player_direction = (0, 0)
+            pass
         
     def _update_ghosts(self) -> None:
         """Update ghost movement and pathfinding."""
