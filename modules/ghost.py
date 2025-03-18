@@ -193,9 +193,34 @@ class Ghost(PathAgent):
                 blinky_pos
             )
             
-            # Calculate new path
-            path = astar_path(grid, ghost.pos, target)
+            # Ensure target is within grid bounds
+            target_row = max(0, min(target[0], len(grid) - 1))
+            target_col = max(0, min(target[1], len(grid[0]) - 1))
+            adjusted_target = (target_row, target_col)
+            
+            # Avoid targeting walls
+            if grid[target_row][target_col] == 1:
+                # Try to find a nearby non-wall position
+                for dr, dc in [(0,1), (1,0), (0,-1), (-1,0)]:
+                    nr, nc = target_row + dr, target_col + dc
+                    if (0 <= nr < len(grid) and 0 <= nc < len(grid[0]) and 
+                            grid[nr][nc] != 1):
+                        adjusted_target = (nr, nc)
+                        break
+            
+            # Calculate new path to the adjusted target
+            path = astar_path(grid, ghost.pos, adjusted_target)
+            
+            # Don't update path if the resulting path is empty or just the current position
             if path and len(path) > 1:
                 ghost.set_path(path)
             
-            ghost.move_step()
+            # Attempt to move the ghost
+            if not ghost.move_step() and ghost.active:
+                # If we couldn't move, try to recalculate a path
+                new_path = astar_path(grid, ghost.pos, adjusted_target)
+                if new_path and len(new_path) > 1:
+                    ghost.path = new_path
+                    ghost.path_index = 0
+                    ghost.moving = True
+                    ghost.move_step()

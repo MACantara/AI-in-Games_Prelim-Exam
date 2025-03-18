@@ -33,12 +33,26 @@ def reconstruct_path(came_from: Dict[Position, Position], current: Position) -> 
 
 def astar_path(grid: Grid, start: Position, goal: Position) -> List[Position]:
     """Find path using A* algorithm."""
+    # First, ensure the goal is valid and within bounds
+    if not (0 <= goal[0] < len(grid) and 0 <= goal[1] < len(grid[0])):
+        # If target is out of bounds, find closest valid position
+        return [start]
+        
+    # Don't try to path to walls
+    if grid[goal[0]][goal[1]] == 1:
+        return [start]
+        
     open_set = [(0, start)]
     closed_set = set()
     came_from = {}
     g_score = {start: 0}
     
-    while open_set:
+    # Limit the search to prevent infinite loops
+    max_iterations = 1000
+    iterations = 0
+    
+    while open_set and iterations < max_iterations:
+        iterations += 1
         _, current = heapq.heappop(open_set)
         
         if current == goal:
@@ -57,4 +71,11 @@ def astar_path(grid: Grid, start: Position, goal: Position) -> List[Position]:
                 f_score = tentative_g + heuristic(neighbor, goal)
                 heapq.heappush(open_set, (f_score, neighbor))
     
+    # If we reached here, no path was found or max iterations reached
+    # Return at least a path to a nearby valid position if possible
+    if came_from:
+        # Find the position closest to the goal that we did reach
+        best_pos = min(came_from.keys(), key=lambda pos: heuristic(pos, goal))
+        return reconstruct_path(came_from, best_pos)
+        
     return [start]  # Return single-point path if no path found
