@@ -97,7 +97,7 @@ class Player:
                 grid[i][j] != 1)
     
     def draw(self, screen, cell_size: int) -> None:
-        """Draw the player (Pacman) with animated mouth."""
+        """Draw the player (Pacman) with animated mouth and eyes."""
         # Calculate center point and radius
         center_x = self.pos[1] * cell_size + cell_size // 2
         center_y = self.pos[0] * cell_size + cell_size // 2
@@ -159,3 +159,46 @@ class Player:
         else:
             # Closed mouth - just a full yellow circle
             pygame.draw.circle(screen, (255, 255, 0), (center_x, center_y), radius)
+            
+        # Add eyes to Pacman
+        self._draw_eyes(screen, center_x, center_y, radius, facing_direction)
+    
+    def _draw_eyes(self, screen, center_x: int, center_y: int, radius: int, 
+                   facing_direction: Tuple[int, int]) -> None:
+        """Draw Pacman's eye(s) based on facing direction."""
+        # For Pacman, we usually only see one eye from the side
+        eye_radius = radius // 5
+        eye_offset = radius // 2.5  # Distance from center
+        
+        # Different eye positions based on facing direction
+        eye_positions = []
+        
+        if facing_direction == (0, 1):  # Right
+            # Single eye near the top
+            eye_x = center_x - eye_offset // 2
+            eye_y = center_y - eye_offset
+            eye_positions.append((eye_x, eye_y))
+            
+        elif facing_direction == (0, -1):  # Left
+            # Single eye near the top
+            eye_x = center_x + eye_offset // 2
+            eye_y = center_y - eye_offset
+            eye_positions.append((eye_x, eye_y))
+            
+        elif facing_direction == (-1, 0):  # Up
+            # Two eyes side by side
+            left_eye_x = center_x - eye_offset
+            right_eye_x = center_x + eye_offset
+            eye_y = center_y
+            eye_positions.extend([(left_eye_x, eye_y), (right_eye_x, eye_y)])
+            
+        elif facing_direction == (1, 0):  # Down
+            # Two eyes side by side
+            left_eye_x = center_x - eye_offset
+            right_eye_x = center_x + eye_offset
+            eye_y = center_y - eye_offset // 2
+            eye_positions.extend([(left_eye_x, eye_y), (right_eye_x, eye_y)])
+            
+        # Draw the eye(s)
+        for pos in eye_positions:
+            pygame.draw.circle(screen, (0, 0, 0), pos, eye_radius)
