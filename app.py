@@ -71,7 +71,10 @@ class PacmanGame:
             self.state.ghosts,
             self.state.debug_mode,
             self.state.game_over,
-            self.state.lives
+            self.state.lives,
+            self.state.dying,
+            self.state.death_timer,
+            self.state.death_animation_length
         )
         
     def run(self) -> None:

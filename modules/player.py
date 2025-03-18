@@ -21,6 +21,11 @@ class Player:
         self.animation_counter = 0
         self.animation_speed = 5  # Lower = faster animation
         
+        # Death animation properties
+        self.dying = False
+        self.death_frame = 0
+        self.death_rotation = 0  # Rotation angle for death animation
+    
     def handle_key_input(self, key: int) -> None:
         """Handle keyboard input for player direction changes."""
         # Store the requested direction but don't change actual direction yet
@@ -96,72 +101,138 @@ class Player:
                 0 <= j < len(grid[0]) and 
                 grid[i][j] != 1)
     
-    def draw(self, screen, cell_size: int) -> None:
+    def draw(self, screen, cell_size: int, dying: bool = False, death_progress: float = 0) -> None:
         """Draw the player (Pacman) with animated mouth and eyes."""
         # Calculate center point and radius
         center_x = self.pos[1] * cell_size + cell_size // 2
         center_y = self.pos[0] * cell_size + cell_size // 2
         radius = cell_size // 2 - 1  # Slightly smaller for better visibility
         
-        # Calculate mouth angles based on direction
-        # Default to right if not moving
-        facing_direction = self.direction if self.direction != (0, 0) else (0, 1)
-        
-        angle_offset = 0
-        if facing_direction == (0, -1):  # Left
-            angle_offset = 180
-        elif facing_direction == (-1, 0):  # Up
-            angle_offset = 270
-        elif facing_direction == (1, 0):  # Down
-            angle_offset = 90
-        # Right is default (offset = 0)
-        
-        # Set fixed mouth angles based on animation state
-        if self.mouth_open:
-            # Open mouth - draw partial circle (45 degree angle)
-            start_angle = angle_offset - 45
-            end_angle = angle_offset + 45
-            
-            # Draw the pac-man using pygame's arc function for precision
-            # Fill a full circle with black first
-            pygame.draw.circle(screen, (0, 0, 0), (center_x, center_y), radius)
-            
-            # Draw yellow arc (Pac-Man body)
-            # Convert angles to radians for pygame
-            start_rad = math.radians(start_angle)
-            end_rad = math.radians(end_angle)
-            
-            # Create a rectangle that bounds the circle
-            rect = pygame.Rect(
-                center_x - radius,
-                center_y - radius,
-                radius * 2,
-                radius * 2
-            )
-            
-            # Draw the arc as a semi-circle with the mouth cutout
-            # We need to draw the arc and then connect it to center for the pie shape
-            points = [(center_x, center_y)]  # Start at center
-            
-            # Add points around the arc
-            num_points = 20  # Number of points for a smooth circle
-            for i in range(num_points + 1):
-                angle_rad = end_rad + (start_rad - end_rad + 2*math.pi) % (2*math.pi) * i / num_points
-                x = center_x + radius * math.cos(angle_rad)
-                y = center_y + radius * math.sin(angle_rad)
-                points.append((x, y))
-            
-            # Close the shape
-            points.append((center_x, center_y))
-            
-            # Draw the full shape
-            pygame.draw.polygon(screen, (255, 255, 0), points)
+        if dying:
+            # Draw death animation
+            self._draw_death_animation(screen, center_x, center_y, radius, death_progress)
         else:
-            # Closed mouth - just a full yellow circle
-            pygame.draw.circle(screen, (255, 255, 0), (center_x, center_y), radius)
+            # Normal pacman drawing
+            # Calculate mouth angles based on direction
+            # Default to right if not moving
+            facing_direction = self.direction if self.direction != (0, 0) else (0, 1)
             
-        # Add eyes to Pacman
-        self._draw_eyes(screen, center_x, center_y, radius, facing_direction)
+            angle_offset = 0
+            if facing_direction == (0, -1):  # Left
+                angle_offset = 180
+            elif facing_direction == (-1, 0):  # Up
+                angle_offset = 270
+            elif facing_direction == (1, 0):  # Down
+                angle_offset = 90
+            # Right is default (offset = 0)
+            
+            # Set fixed mouth angles based on animation state
+            if self.mouth_open:
+                # Open mouth - draw partial circle (45 degree angle)
+                start_angle = angle_offset - 45
+                end_angle = angle_offset + 45
+                
+                # Draw the pac-man using pygame's arc function for precision
+                # Fill a full circle with black first
+                pygame.draw.circle(screen, (0, 0, 0), (center_x, center_y), radius)
+                
+                # Draw yellow arc (Pac-Man body)
+                # Convert angles to radians for pygame
+                start_rad = math.radians(start_angle)
+                end_rad = math.radians(end_angle)
+                
+                # Create a rectangle that bounds the circle
+                rect = pygame.Rect(
+                    center_x - radius,
+                    center_y - radius,
+                    radius * 2,
+                    radius * 2
+                )
+                
+                # Draw the arc as a semi-circle with the mouth cutout
+                # We need to draw the arc and then connect it to center for the pie shape
+                points = [(center_x, center_y)]  # Start at center
+                
+                # Add points around the arc
+                num_points = 20  # Number of points for a smooth circle
+                for i in range(num_points + 1):
+                    angle_rad = end_rad + (start_rad - end_rad + 2*math.pi) % (2*math.pi) * i / num_points
+                    x = center_x + radius * math.cos(angle_rad)
+                    y = center_y + radius * math.sin(angle_rad)
+                    points.append((x, y))
+                
+                # Close the shape
+                points.append((center_x, center_y))
+                
+                # Draw the full shape
+                pygame.draw.polygon(screen, (255, 255, 0), points)
+            else:
+                # Closed mouth - just a full yellow circle
+                pygame.draw.circle(screen, (255, 255, 0), (center_x, center_y), radius)
+                
+            # Add eyes to Pacman
+            self._draw_eyes(screen, center_x, center_y, radius, facing_direction)
+    
+    def _draw_death_animation(self, screen, center_x: int, center_y: int, radius: int, progress: float) -> None:
+        """Draw the death animation for Pacman."""
+        # Calculate animation phase (0 to 1)
+        if progress < 0.3:
+            # Phase 1: Pacman stops and mouth opens fully
+            angle = 90 - (progress / 0.3) * 90  # From 0 to 90 degrees
+            self._draw_pacman_circle(screen, center_x, center_y, radius, angle)
+        elif progress < 0.5:
+            # Phase 2: Flash white briefly
+            if int(progress * 30) % 2 == 0:  # Alternate between yellow and white
+                pygame.draw.circle(screen, (255, 255, 255), (center_x, center_y), radius)
+            else:
+                pygame.draw.circle(screen, (255, 255, 0), (center_x, center_y), radius)
+        else:
+            # Phase 3: Spin and shrink
+            spin_progress = (progress - 0.5) / 0.5  # 0 to 1
+            spin_angle = spin_progress * 720  # Spin twice
+            shrink_factor = 1 - spin_progress * 0.8  # Shrink to 20% size
+            
+            # Create a surface for the rotating pacman
+            size = int(radius * 2 * 1.5)  # Make surface a bit larger than pacman
+            pacman_surface = pygame.Surface((size, size), pygame.SRCALPHA)
+            
+            # Draw full pacman on the surface
+            smaller_radius = int(radius * shrink_factor)
+            surf_center = size // 2
+            pygame.draw.circle(pacman_surface, (255, 255, 0), (surf_center, surf_center), smaller_radius)
+            
+            # Rotate the surface
+            rotated = pygame.transform.rotate(pacman_surface, spin_angle)
+            
+            # Position the rotated surface on the screen
+            rect = rotated.get_rect(center=(center_x, center_y))
+            screen.blit(rotated, rect)
+            
+    def _draw_pacman_circle(self, screen, center_x: int, center_y: int, radius: int, mouth_angle: float) -> None:
+        """Draw pacman with specified mouth angle."""
+        if mouth_angle <= 0:
+            # Closed mouth - just a circle
+            pygame.draw.circle(screen, (255, 255, 0), (center_x, center_y), radius)
+            return
+        
+        # Calculate start and end angles for the arc
+        angle_offset = 0  # Default to right-facing
+        start_rad = math.radians(angle_offset - mouth_angle)
+        end_rad = math.radians(angle_offset + mouth_angle)
+        
+        # Draw the pie shape for pacman
+        points = [(center_x, center_y)]  # Center point
+        
+        # Add points around the arc
+        num_points = 20
+        for i in range(num_points + 1):
+            angle_rad = end_rad + (start_rad - end_rad + 2*math.pi) % (2*math.pi) * i / num_points
+            x = center_x + radius * math.cos(angle_rad)
+            y = center_y + radius * math.sin(angle_rad)
+            points.append((x, y))
+            
+        points.append((center_x, center_y))  # Back to center
+        pygame.draw.polygon(screen, (255, 255, 0), points)
     
     def _draw_eyes(self, screen, center_x: int, center_y: int, radius: int, 
                    facing_direction: Tuple[int, int]) -> None:

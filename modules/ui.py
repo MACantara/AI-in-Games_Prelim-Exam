@@ -12,11 +12,22 @@ class UI:
         self.height = screen.get_height()
     
     def render_game(self, grid: List[List[int]], player, ghosts: List, debug_mode: bool = False, 
-                    game_over: bool = False, lives: int = 3) -> None:
+                    game_over: bool = False, lives: int = 3, dying: bool = False, death_timer: int = 0,
+                    death_animation_length: int = 90) -> None:
         """Main rendering method that draws everything in the game."""
         self.screen.fill((0, 0, 0))  # Clear screen
         self._draw_grid(grid)
-        self._draw_entities(player, ghosts)
+        
+        # Draw ghosts below player if player is dying
+        if dying:
+            for ghost in ghosts:
+                ghost.draw(self.screen, self.cell_size)
+            # Calculate death animation progress (0 to 1)
+            death_progress = death_timer / death_animation_length
+            player.draw(self.screen, self.cell_size, dying=True, death_progress=death_progress)
+        else:
+            self._draw_entities(player, ghosts)
+            
         self._draw_score(player.score)
         self._draw_lives(lives)
         

@@ -17,6 +17,9 @@ class GameState:
     debug_mode: bool = False
     game_over: bool = False  # Flag for game over state
     lives: int = 3  # Number of player lives
+    dying: bool = False  # Flag for death animation
+    death_timer: int = 0  # Timer for death animation
+    death_animation_length: int = 90  # Length of death animation in frames (3 seconds at 30fps)
     
     def __post_init__(self):
         if self.ghost_release_times is None:
@@ -49,6 +52,15 @@ class GameState:
         if self.game_over:
             return
             
+        # Handle death animation
+        if self.dying:
+            self.death_timer += 1
+            if self.death_timer >= self.death_animation_length:
+                self.dying = False
+                self.death_timer = 0
+                self._reset_positions()
+            return
+        
         self.game_timer += 1
         self.scatter_timer = (self.scatter_timer + 1) % 400
         
@@ -79,7 +91,12 @@ class GameState:
         if self.lives <= 0:
             self.game_over = True
         else:
-            self._reset_positions()
+            # Start death animation instead of immediately resetting
+            self.dying = True
+            self.death_timer = 0
+            # Freeze ghosts during animation
+            for ghost in self.ghosts:
+                ghost.active = False
     
     def _reset_positions(self) -> None:
         """Reset player and ghost positions after losing a life."""
