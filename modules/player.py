@@ -8,6 +8,7 @@ class Player:
         """Initialize player with a position."""
         self.pos = pos  # [row, col]
         self.direction = (0, 0)  # (dx, dy)
+        self.requested_direction = (0, 0)  # Direction player wants to go
         self.move_delay = 0
         self.move_speed = 5
         self.score = 0
@@ -16,14 +17,15 @@ class Player:
         
     def handle_key_input(self, key: int) -> None:
         """Handle keyboard input for player direction changes."""
+        # Store the requested direction but don't change actual direction yet
         if key in (pygame.K_UP, pygame.K_w):
-            self.direction = (-1, 0)
+            self.requested_direction = (-1, 0)
         elif key in (pygame.K_DOWN, pygame.K_s):
-            self.direction = (1, 0)
+            self.requested_direction = (1, 0)
         elif key in (pygame.K_LEFT, pygame.K_a):
-            self.direction = (0, -1)
+            self.requested_direction = (0, -1)
         elif key in (pygame.K_RIGHT, pygame.K_d):
-            self.direction = (0, 1)
+            self.requested_direction = (0, 1)
     
     def update_position(self, grid: List[List[int]]) -> None:
         """Update player position based on current direction."""
@@ -31,22 +33,37 @@ class Player:
         self.move_delay = (self.move_delay + 1) % self.move_speed
         if self.move_delay != 0:
             return
-            
-        # Calculate new position based on current direction
-        new_pos = self.pos.copy()
-        dx, dy = self.direction
-        new_pos[0] += dx
-        new_pos[1] += dy
         
-        # Try to move in the current direction
-        if self._can_move_to(tuple(new_pos), grid):
-            # Check if player is collecting a dot
-            row, col = new_pos
-            if grid[row][col] == 2:  # If it's a dot
-                grid[row][col] = 0  # Remove the dot
-                self.score += self.dot_points  # Increase score
-                
-            self.pos = new_pos
+        # First, try to move in the requested direction if different from current
+        if self.requested_direction != self.direction:
+            requested_pos = [
+                self.pos[0] + self.requested_direction[0],
+                self.pos[1] + self.requested_direction[1]
+            ]
+            
+            if self._can_move_to(tuple(requested_pos), grid):
+                # Switch to the requested direction
+                self.direction = self.requested_direction
+                self._move_and_collect_dot(requested_pos, grid)
+                return
+        
+        # If we can't move in the requested direction, try to continue in current direction
+        current_pos = [
+            self.pos[0] + self.direction[0],
+            self.pos[1] + self.direction[1]
+        ]
+        
+        if self._can_move_to(tuple(current_pos), grid):
+            self._move_and_collect_dot(current_pos, grid)
+    
+    def _move_and_collect_dot(self, new_pos: List[int], grid: List[List[int]]) -> None:
+        """Move to the new position and collect a dot if present."""
+        row, col = new_pos
+        if grid[row][col] == 2:  # If it's a dot
+            grid[row][col] = 0  # Remove the dot
+            self.score += self.dot_points  # Increase score
+            
+        self.pos = new_pos
     
     def _can_move_to(self, pos: Tuple[int, int], grid: List[List[int]]) -> bool:
         """Check if movement to position is valid, handling tunnel wraparound."""
