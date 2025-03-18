@@ -2,6 +2,7 @@ import pygame
 from typing import Tuple, Optional
 from modules.game_state import GameState
 from modules.algorithms import astar_path
+from modules.player import Player
 
 class PacmanGame:
     def __init__(self, cell_size: int = 30):
@@ -14,11 +15,8 @@ class PacmanGame:
         self.clock = pygame.time.Clock()
         self.state = GameState.create_new_game()
         self.ghost_move_delay = 0
-        self.score = 0  # Initialize player score
-        self.dot_points = 10  # Points for eating a regular dot
-        self.power_pellet_points = 50  # Points for eating a power pellet (not implemented yet)
-        self.player_move_delay = 0  # Control player movement speed
-        self.player_move_speed = 5  # Lower = faster movement (frames to wait)
+        # Create player instance with initial position
+        self.player = Player(self.state.player_pos)
         
     def handle_input(self) -> bool:
         """Handle user input. Returns False if game should quit."""
@@ -26,73 +24,23 @@ class PacmanGame:
             if event.type == pygame.QUIT:
                 return False
             if event.type == pygame.KEYDOWN:
-                self._handle_keypress(event.key)
+                if event.key == pygame.K_F3:
+                    self.state.debug_mode = not self.state.debug_mode
+                else:
+                    self.player.handle_key_input(event.key)
         return True
         
-    def _handle_keypress(self, key: int) -> None:
-        """Handle keyboard input for player movement and debug mode."""
-        if key == pygame.K_F3:
-            self.state.debug_mode = not self.state.debug_mode
-            return
-            
-        # Just set direction based on key press, actual movement happens in update()
-        if key in (pygame.K_UP, pygame.K_w):
-            self.state.player_direction = (-1, 0)
-        elif key in (pygame.K_DOWN, pygame.K_s):
-            self.state.player_direction = (1, 0)
-        elif key in (pygame.K_LEFT, pygame.K_a):
-            self.state.player_direction = (0, -1)
-        elif key in (pygame.K_RIGHT, pygame.K_d):
-            self.state.player_direction = (0, 1)
-            
-    def _can_move_to(self, pos: Tuple[int, int]) -> bool:
-        """Check if movement to position is valid, handling tunnel wraparound."""
-        i, j = pos
-        if i == 11:  # Tunnel row
-            if j < 0:
-                self.state.player_pos[1] = len(self.state.grid[0]) - 2
-                return True
-            if j >= len(self.state.grid[0]):
-                self.state.player_pos[1] = 0
-                return True
-        return (0 <= i < len(self.state.grid) and 
-                0 <= j < len(self.state.grid[0]) and 
-                self.state.grid[i][j] != 1)
-                
     def update(self) -> None:
         """Update game state."""
-        self._update_player_position()  # New method for player movement
+        # Update player position and collect dots
+        self.player.update_position(self.state.grid)
+        
+        # Update game state with current player position and direction
+        self.state.player_pos = self.player.pos
+        self.state.player_direction = self.player.direction
+        
         self.state.update()
         self._update_ghosts()
-        
-    def _update_player_position(self) -> None:
-        """Update player position based on current direction."""
-        # Control movement speed
-        self.player_move_delay = (self.player_move_delay + 1) % self.player_move_speed
-        if self.player_move_delay != 0:
-            return
-            
-        # Calculate new position based on current direction
-        new_pos = self.state.player_pos.copy()
-        dx, dy = self.state.player_direction
-        new_pos[0] += dx
-        new_pos[1] += dy
-        
-        # Try to move in the current direction
-        if self._can_move_to(tuple(new_pos)):
-            # Check if player is collecting a dot
-            row, col = new_pos
-            if self.state.grid[row][col] == 2:  # If it's a dot
-                self.state.grid[row][col] = 0  # Remove the dot
-                self.score += self.dot_points  # Increase score
-                
-            self.state.player_pos = new_pos
-        else:
-            # If we hit a wall, stop moving in that direction
-            # This is optional - you might want to keep the direction and just not move
-            # Uncomment the line below if you want to stop when hitting a wall
-            # self.state.player_direction = (0, 0)
-            pass
         
     def _update_ghosts(self) -> None:
         """Update ghost movement and pathfinding."""
@@ -124,7 +72,7 @@ class PacmanGame:
         self.screen.fill((0, 0, 0))
         self._draw_grid()
         self._draw_entities()
-        self._draw_score()  # Add score display
+        self._draw_score()
         self._draw_debug_info()
         pygame.display.flip()
         
@@ -145,13 +93,8 @@ class PacmanGame:
                     
     def _draw_entities(self) -> None:
         """Draw player and ghosts."""
-        # Draw player
-        player_rect = pygame.Rect(
-            self.state.player_pos[1] * self.cell_size,
-            self.state.player_pos[0] * self.cell_size,
-            self.cell_size, self.cell_size
-        )
-        pygame.draw.ellipse(self.screen, (255, 255, 0), player_rect)
+        # Draw player using its own draw method
+        self.player.draw(self.screen, self.cell_size)
         
         # Draw ghosts
         for ghost in self.state.ghosts:
@@ -160,7 +103,7 @@ class PacmanGame:
     def _draw_score(self) -> None:
         """Display the current score on screen."""
         font = pygame.font.Font(None, 36)
-        score_text = font.render(f"Score: {self.score}", True, (255, 255, 255))
+        score_text = font.render(f"Score: {self.player.score}", True, (255, 255, 255))
         self.screen.blit(score_text, (10, 10))
         
     def _draw_debug_info(self) -> None:
