@@ -4,6 +4,7 @@ from modules.game_state import GameState
 from modules.algorithms import astar_path
 from modules.player import Player
 from modules.ghost import Ghost
+from modules.ui import UI
 
 class PacmanGame:
     def __init__(self, cell_size: int = 30):
@@ -18,6 +19,8 @@ class PacmanGame:
         self.ghost_move_delay = 0
         # Create player instance with initial position
         self.player = Player(self.state.player_pos)
+        # Create UI handler
+        self.ui = UI(self.screen, self.cell_size)
         
     def handle_input(self) -> bool:
         """Handle user input. Returns False if game should quit."""
@@ -53,60 +56,13 @@ class PacmanGame:
         self.state.update()
         
     def render(self) -> None:
-        """Render the game state to the screen."""
-        self.screen.fill((0, 0, 0))
-        self._draw_grid()
-        self._draw_entities()
-        self._draw_score()
-        self._draw_debug_info()
-        pygame.display.flip()
-        
-    def _draw_grid(self) -> None:
-        """Draw the game grid."""
-        for i in range(len(self.state.grid)):
-            for j in range(len(self.state.grid[0])):
-                x = j * self.cell_size
-                y = i * self.cell_size
-                rect = pygame.Rect(x, y, self.cell_size, self.cell_size)
-                
-                if self.state.grid[i][j] == 1:  # Wall
-                    pygame.draw.rect(self.screen, (51, 51, 51), rect)
-                elif self.state.grid[i][j] == 2:  # Point
-                    dot_size = self.cell_size // 4
-                    dot_pos = (x + self.cell_size//2, y + self.cell_size//2)
-                    pygame.draw.circle(self.screen, (255, 255, 0), dot_pos, dot_size)
-                    
-    def _draw_entities(self) -> None:
-        """Draw player and ghosts."""
-        # Draw player using its own draw method
-        self.player.draw(self.screen, self.cell_size)
-        
-        # Draw ghosts
-        for ghost in self.state.ghosts:
-            ghost.draw(self.screen, self.cell_size)
-            
-    def _draw_score(self) -> None:
-        """Display the current score on screen."""
-        font = pygame.font.Font(None, 36)
-        score_text = font.render(f"Score: {self.player.score}", True, (255, 255, 255))
-        self.screen.blit(score_text, (10, 10))
-        
-    def _draw_debug_info(self) -> None:
-        """Draw debug information if debug mode is enabled."""
-        if not self.state.debug_mode:
-            return
-            
-        for ghost in self.state.ghosts:
-            if ghost.path:
-                points = [(p[1] * self.cell_size + self.cell_size//2,
-                          p[0] * self.cell_size + self.cell_size//2)
-                         for p in ghost.path[ghost.path_index:]]
-                if len(points) > 1:
-                    pygame.draw.lines(self.screen, ghost.color, False, points, 2)
-                    
-        font = pygame.font.Font(None, 36)
-        debug_text = font.render(f"Debug Mode: ON (F3)", True, (255, 255, 255))
-        self.screen.blit(debug_text, (10, self.height - 30))
+        """Render the game state using the UI handler."""
+        self.ui.render_game(
+            self.state.grid,
+            self.player,
+            self.state.ghosts,
+            self.state.debug_mode
+        )
         
     def run(self) -> None:
         """Main game loop."""
