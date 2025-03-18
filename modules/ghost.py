@@ -1,8 +1,9 @@
 import pygame
 import math
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 from dataclasses import dataclass
 from .agent import PathAgent
+from .algorithms import astar_path
 
 Position = Tuple[int, int]
 Color = Tuple[int, int, int]
@@ -175,3 +176,26 @@ class Ghost(PathAgent):
                          (right_eye_pos[0] + pupil_offset_x, 
                           right_eye_pos[1] + pupil_offset_y), 
                          pupil_radius)
+
+    @classmethod
+    def update_all_ghosts(cls, ghosts: List['Ghost'], grid: List[List[int]], 
+                          player_pos: Tuple[int, int], player_direction: Tuple[int, int]) -> None:
+        """Update all ghosts movement and pathfinding."""
+        for ghost in ghosts:
+            if not ghost.active:
+                continue
+                
+            # Always get new target and calculate new path
+            blinky_pos = ghosts[0].pos if ghost.ghost_type != 'blinky' else None
+            target = ghost.get_chase_target(
+                player_pos,
+                player_direction,
+                blinky_pos
+            )
+            
+            # Calculate new path
+            path = astar_path(grid, ghost.pos, target)
+            if path and len(path) > 1:
+                ghost.set_path(path)
+            
+            ghost.move_step()

@@ -3,6 +3,7 @@ from typing import Tuple, Optional
 from modules.game_state import GameState
 from modules.algorithms import astar_path
 from modules.player import Player
+from modules.ghost import Ghost
 
 class PacmanGame:
     def __init__(self, cell_size: int = 30):
@@ -39,34 +40,18 @@ class PacmanGame:
         self.state.player_pos = self.player.pos
         self.state.player_direction = self.player.direction
         
-        self.state.update()
-        self._update_ghosts()
-        
-    def _update_ghosts(self) -> None:
-        """Update ghost movement and pathfinding."""
+        # Update ghost positions
         self.ghost_move_delay = (self.ghost_move_delay + 1) % 6
-        if self.ghost_move_delay != 0:
-            return
-            
-        for ghost in self.state.ghosts:
-            if not ghost.active:
-                continue
-                
-            # Always get new target and calculate new path
-            blinky_pos = self.state.ghosts[0].pos if ghost.ghost_type != 'blinky' else None
-            target = ghost.get_chase_target(
+        if self.ghost_move_delay == 0:
+            Ghost.update_all_ghosts(
+                self.state.ghosts, 
+                self.state.grid,
                 tuple(self.state.player_pos),
-                self.state.player_direction,
-                blinky_pos
+                self.state.player_direction
             )
-            
-            # Calculate new path every frame
-            path = astar_path(self.state.grid, ghost.pos, target)
-            if path and len(path) > 1:
-                ghost.set_path(path)
-            
-            ghost.move_step()
-            
+        
+        self.state.update()
+        
     def render(self) -> None:
         """Render the game state to the screen."""
         self.screen.fill((0, 0, 0))
