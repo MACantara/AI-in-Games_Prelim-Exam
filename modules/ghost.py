@@ -105,7 +105,7 @@ class Ghost(PathAgent):
         ghost_points.append((x + cell_size, y + 3*cell_size//4))
         
         # Create smooth wavy bottom
-        bottom_y = y + 3*cell_size//4
+        bottom_y = y + 3.5*cell_size//4
         num_waves = 5
         points_per_wave = 4  # More points per wave for smoothness
         
@@ -115,7 +115,7 @@ class Ghost(PathAgent):
             wave_x = x + cell_size - t * cell_size
             
             # Use smoother sine function with offset for alternating waves
-            wave_freq = 7  # Number of complete waves
+            wave_freq = 5  # Number of complete waves
             wave_height = cell_size // 24  # Less height for gentler waves
             
             # Calculate wave height with smooth animation
