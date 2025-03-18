@@ -26,6 +26,7 @@ class Ghost(PathAgent):
     def __init__(self, pos: Position, ghost_type: str):
         """Initialize ghost with position and type-specific attributes."""
         super().__init__(pos)
+        self.start_pos = pos  # Store initial position for reset
         if ghost_type not in GHOST_CONFIGS:
             raise ValueError(f"Invalid ghost type: {ghost_type}")
             
@@ -37,6 +38,14 @@ class Ghost(PathAgent):
         self.active = False
         # Animation counter for the wavy bottom
         self.wave_animation_counter = 0
+
+    def reset_to_start(self) -> None:
+        """Reset ghost to its starting position and state."""
+        self.pos = self.start_pos
+        self.path = []
+        self.path_index = 0
+        self.moving = False
+        self.scatter_mode = False
 
     def get_chase_target(self, player_pos: Position, player_direction: Position, 
                         blinky_pos: Optional[Position] = None) -> Position:
@@ -155,7 +164,7 @@ class Ghost(PathAgent):
         direction = (0, 0)
         if self.path and len(self.path) > self.path_index + 1:
             next_pos = self.path[self.path_index + 1]
-            direction = (next_pos[0] - self.pos[0], next_pos[1] - self.pos[1])
+            direction = (next_pos[0] - self.pos[0], (next_pos[1] - self.pos[1]))
         
         # Calculate pupil offset based on direction
         pupil_offset_x = 0

@@ -30,9 +30,17 @@ class PacmanGame:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_F3:
                     self.state.debug_mode = not self.state.debug_mode
-                else:
+                elif event.key == pygame.K_r and self.state.game_over:
+                    self._restart_game()
+                elif not self.state.game_over:
                     self.player.handle_key_input(event.key)
         return True
+    
+    def _restart_game(self) -> None:
+        """Restart the game after game over."""
+        self.state = GameState.create_new_game()
+        self.player = Player(self.state.player_pos)
+        self.ghost_move_delay = 0
         
     def update(self) -> None:
         """Update game state."""
@@ -61,7 +69,9 @@ class PacmanGame:
             self.state.grid,
             self.player,
             self.state.ghosts,
-            self.state.debug_mode
+            self.state.debug_mode,
+            self.state.game_over,
+            self.state.lives
         )
         
     def run(self) -> None:

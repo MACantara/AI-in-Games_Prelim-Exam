@@ -15,6 +15,8 @@ class GameState:
     game_timer: int = 0
     scatter_timer: int = 0
     debug_mode: bool = False
+    game_over: bool = False  # Flag for game over state
+    lives: int = 3  # Number of player lives
     
     def __post_init__(self):
         if self.ghost_release_times is None:
@@ -44,6 +46,9 @@ class GameState:
     
     def update(self) -> None:
         """Update game state for one frame."""
+        if self.game_over:
+            return
+            
         self.game_timer += 1
         self.scatter_timer = (self.scatter_timer + 1) % 400
         
@@ -56,3 +61,36 @@ class GameState:
         for ghost in self.ghosts:
             if ghost.active:
                 ghost.scatter_mode = scatter_mode
+                
+        # Check for collision with ghosts
+        self._check_ghost_collisions()
+    
+    def _check_ghost_collisions(self) -> None:
+        """Check if player has collided with any ghost."""
+        player_pos = tuple(self.player_pos)
+        for ghost in self.ghosts:
+            if ghost.active and ghost.pos == player_pos:
+                self._handle_ghost_collision()
+                break
+    
+    def _handle_ghost_collision(self) -> None:
+        """Handle what happens when player collides with ghost."""
+        self.lives -= 1
+        if self.lives <= 0:
+            self.game_over = True
+        else:
+            self._reset_positions()
+    
+    def _reset_positions(self) -> None:
+        """Reset player and ghost positions after losing a life."""
+        # Reset player position
+        self.player_pos = [18, 11]  # Starting position
+        self.player_direction = (0, 0)
+        
+        # Reset ghosts
+        for ghost in self.ghosts:
+            ghost.reset_to_start()
+            ghost.active = False
+            
+        # Reset timers
+        self.game_timer = 0

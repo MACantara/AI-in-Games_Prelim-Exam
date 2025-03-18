@@ -11,14 +11,21 @@ class UI:
         self.width = screen.get_width()
         self.height = screen.get_height()
     
-    def render_game(self, grid: List[List[int]], player, ghosts: List, debug_mode: bool = False) -> None:
+    def render_game(self, grid: List[List[int]], player, ghosts: List, debug_mode: bool = False, 
+                    game_over: bool = False, lives: int = 3) -> None:
         """Main rendering method that draws everything in the game."""
         self.screen.fill((0, 0, 0))  # Clear screen
         self._draw_grid(grid)
         self._draw_entities(player, ghosts)
         self._draw_score(player.score)
+        self._draw_lives(lives)
+        
         if debug_mode:
             self._draw_debug_info(ghosts)
+            
+        if game_over:
+            self._draw_game_over()
+            
         pygame.display.flip()
     
     def _draw_grid(self, grid: List[List[int]]) -> None:
@@ -51,6 +58,12 @@ class UI:
         score_text = font.render(f"Score: {score}", True, (255, 255, 255))
         self.screen.blit(score_text, (10, 10))
     
+    def _draw_lives(self, lives: int) -> None:
+        """Display the number of remaining lives."""
+        font = pygame.font.Font(None, 36)
+        lives_text = font.render(f"Lives: {lives}", True, (255, 255, 255))
+        self.screen.blit(lives_text, (self.width - 150, 10))
+    
     def _draw_debug_info(self, ghosts: List) -> None:
         """Draw debug information like ghost paths."""
         for ghost in ghosts:
@@ -64,3 +77,22 @@ class UI:
         font = pygame.font.Font(None, 36)
         debug_text = font.render(f"Debug Mode: ON (F3)", True, (255, 255, 255))
         self.screen.blit(debug_text, (10, self.height - 30))
+    
+    def _draw_game_over(self) -> None:
+        """Display game over message."""
+        # Semi-transparent overlay
+        overlay = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 128))  # Black with 50% transparency
+        self.screen.blit(overlay, (0, 0))
+        
+        # Game over text
+        font = pygame.font.Font(None, 72)
+        text = font.render("GAME OVER", True, (255, 0, 0))
+        text_rect = text.get_rect(center=(self.width // 2, self.height // 2))
+        self.screen.blit(text, text_rect)
+        
+        # Instructions text
+        font_small = pygame.font.Font(None, 36)
+        restart_text = font_small.render("Press R to restart", True, (255, 255, 255))
+        restart_rect = restart_text.get_rect(center=(self.width // 2, self.height // 2 + 50))
+        self.screen.blit(restart_text, restart_rect)
