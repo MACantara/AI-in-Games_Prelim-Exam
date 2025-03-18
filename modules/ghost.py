@@ -115,8 +115,8 @@ class Ghost(PathAgent):
             wave_x = x + cell_size - t * cell_size
             
             # Use smoother sine function with offset for alternating waves
-            wave_freq = 5  # Number of complete waves
-            wave_height = cell_size // 6  # Less height for gentler waves
+            wave_freq = 7  # Number of complete waves
+            wave_height = cell_size // 24  # Less height for gentler waves
             
             # Calculate wave height with smooth animation
             offset = math.sin(self.wave_animation_counter) * (wave_height / 3)
