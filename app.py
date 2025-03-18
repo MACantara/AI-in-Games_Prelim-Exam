@@ -129,12 +129,7 @@ class PacmanGame:
         
         # Draw ghosts
         for ghost in self.state.ghosts:
-            ghost_rect = pygame.Rect(
-                ghost.pos[1] * self.cell_size,
-                ghost.pos[0] * self.cell_size,
-                self.cell_size, self.cell_size
-            )
-            pygame.draw.ellipse(self.screen, ghost.color, ghost_rect)
+            ghost.draw(self.screen, self.cell_size)
             
     def _draw_debug_info(self) -> None:
         """Draw debug information if debug mode is enabled."""

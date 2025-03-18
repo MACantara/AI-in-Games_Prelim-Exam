@@ -1,3 +1,4 @@
+import pygame
 from typing import Tuple, Optional
 from dataclasses import dataclass
 from .agent import PathAgent
@@ -76,3 +77,58 @@ class Ghost(PathAgent):
         distance = ((player_pos[0] - self.pos[0])**2 + 
                    (player_pos[1] - self.pos[1])**2)**0.5
         return self.scatter_target if distance < 8 else player_pos
+
+    def draw(self, screen, cell_size: int) -> None:
+        """Draw the ghost with direction-indicating eyes."""
+        # Draw ghost body
+        ghost_rect = pygame.Rect(
+            self.pos[1] * cell_size,
+            self.pos[0] * cell_size,
+            cell_size, cell_size
+        )
+        pygame.draw.ellipse(screen, self.color, ghost_rect)
+        
+        # Calculate eye positions
+        eye_radius = cell_size // 5
+        left_eye_pos = (
+            self.pos[1] * cell_size + cell_size // 3,
+            self.pos[0] * cell_size + cell_size // 3
+        )
+        right_eye_pos = (
+            self.pos[1] * cell_size + cell_size * 2 // 3,
+            self.pos[0] * cell_size + cell_size // 3
+        )
+        
+        # Draw eyes (white circles)
+        pygame.draw.circle(screen, (255, 255, 255), left_eye_pos, eye_radius)
+        pygame.draw.circle(screen, (255, 255, 255), right_eye_pos, eye_radius)
+        
+        # Determine pupil positions based on current direction
+        direction = (0, 0)
+        if self.path and len(self.path) > self.path_index + 1:
+            next_pos = self.path[self.path_index + 1]
+            direction = (next_pos[0] - self.pos[0], next_pos[1] - self.pos[1])
+        
+        # Calculate pupil offset based on direction
+        pupil_offset_x = 0
+        pupil_offset_y = 0
+        
+        if direction[0] < 0:  # Moving up
+            pupil_offset_y = -eye_radius // 2
+        elif direction[0] > 0:  # Moving down
+            pupil_offset_y = eye_radius // 2
+        elif direction[1] < 0:  # Moving left
+            pupil_offset_x = -eye_radius // 2
+        elif direction[1] > 0:  # Moving right
+            pupil_offset_x = eye_radius // 2
+        
+        # Draw pupils (blue circles)
+        pupil_radius = eye_radius // 2
+        pygame.draw.circle(screen, (0, 0, 255), 
+                         (left_eye_pos[0] + pupil_offset_x, 
+                          left_eye_pos[1] + pupil_offset_y), 
+                         pupil_radius)
+        pygame.draw.circle(screen, (0, 0, 255), 
+                         (right_eye_pos[0] + pupil_offset_x, 
+                          right_eye_pos[1] + pupil_offset_y), 
+                         pupil_radius)
