@@ -111,9 +111,9 @@ class Player:
         if facing_direction == (0, -1):  # Left
             angle_offset = 180
         elif facing_direction == (-1, 0):  # Up
-            angle_offset = 90
-        elif facing_direction == (1, 0):  # Down
             angle_offset = 270
+        elif facing_direction == (1, 0):  # Down
+            angle_offset = 90
         # Right is default (offset = 0)
         
         # Set fixed mouth angles based on animation state
