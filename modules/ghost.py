@@ -1,4 +1,5 @@
 import pygame
+import math
 from typing import Tuple, Optional
 from dataclasses import dataclass
 from .agent import PathAgent
@@ -33,6 +34,8 @@ class Ghost(PathAgent):
         self.scatter_target = config.scatter_target
         self.scatter_mode = False
         self.active = False
+        # Animation counter for the wavy bottom
+        self.wave_animation_counter = 0
 
     def get_chase_target(self, player_pos: Position, player_direction: Position, 
                         blinky_pos: Optional[Position] = None) -> Position:
@@ -79,14 +82,55 @@ class Ghost(PathAgent):
         return self.scatter_target if distance < 8 else player_pos
 
     def draw(self, screen, cell_size: int) -> None:
-        """Draw the ghost with direction-indicating eyes."""
-        # Draw ghost body
-        ghost_rect = pygame.Rect(
-            self.pos[1] * cell_size,
-            self.pos[0] * cell_size,
-            cell_size, cell_size
-        )
-        pygame.draw.ellipse(screen, self.color, ghost_rect)
+        """Draw the ghost with direction-indicating eyes and wavy bottom."""
+        # Update animation counter
+        self.wave_animation_counter = (self.wave_animation_counter + 0.2) % (2 * math.pi)
+        
+        # Basic dimensions
+        x = self.pos[1] * cell_size
+        y = self.pos[0] * cell_size
+        
+        # Draw the main ghost body (stopping at the bottom where waves start)
+        ghost_rect = pygame.Rect(x, y, cell_size, cell_size)
+        
+        # Create a surface for the ghost body with transparency
+        ghost_surface = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
+        # Draw upper part of ghost (full ellipse)
+        pygame.draw.ellipse(ghost_surface, self.color, (0, 0, cell_size, cell_size))
+        # Create a rectangle to cover the bottom part that will be replaced by waves
+        pygame.draw.rect(ghost_surface, (0, 0, 0, 0), (0, 3*cell_size//4, cell_size, cell_size//4))
+        # Blit the modified ghost body onto the main screen
+        screen.blit(ghost_surface, (x, y))
+        
+        # Draw the wavy bottom part
+        bottom_y = y + 3*cell_size//4  # Position at 3/4 down the ghost
+        num_waves = 5  # Number of waves at the bottom
+        wave_width = cell_size / num_waves
+        wave_height = cell_size // 4
+        
+        # Create points for the wavy bottom
+        points = []
+        # Start at the left side where the main body transitions to waves
+        points.append((x, bottom_y))
+        
+        # Add points for each wave
+        for i in range(num_waves + 1):
+            wave_x = x + i * wave_width
+            # Alternating wave pattern with animation offset
+            if i % 2 == 0:
+                offset = math.sin(self.wave_animation_counter) * (wave_height / 4)
+                wave_y = bottom_y + wave_height + offset
+            else:
+                offset = math.sin(self.wave_animation_counter + math.pi) * (wave_height / 4)
+                wave_y = bottom_y + offset
+                
+            points.append((wave_x, wave_y))
+        
+        # Add the right edge point to connect back to the main body
+        points.append((x + cell_size, bottom_y))
+        
+        # Draw the wavy bottom polygon
+        pygame.draw.polygon(screen, self.color, points)
         
         # Calculate eye positions
         eye_radius = cell_size // 5
