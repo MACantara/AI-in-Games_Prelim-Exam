@@ -116,25 +116,46 @@ class Player:
             angle_offset = 270
         # Right is default (offset = 0)
         
-        # Set fixed mouth angles - either fully open or closed
-        mouth_angle = 45 if self.mouth_open else 0
-        
-        # Draw the complete pacman
-        if mouth_angle == 0:
-            # Closed mouth - just a yellow circle
-            pygame.draw.circle(screen, (255, 255, 0), (center_x, center_y), radius)
+        # Set fixed mouth angles based on animation state
+        if self.mouth_open:
+            # Open mouth - draw partial circle (45 degree angle)
+            start_angle = angle_offset - 45
+            end_angle = angle_offset + 45
+            
+            # Draw the pac-man using pygame's arc function for precision
+            # Fill a full circle with black first
+            pygame.draw.circle(screen, (0, 0, 0), (center_x, center_y), radius)
+            
+            # Draw yellow arc (Pac-Man body)
+            # Convert angles to radians for pygame
+            start_rad = math.radians(start_angle)
+            end_rad = math.radians(end_angle)
+            
+            # Create a rectangle that bounds the circle
+            rect = pygame.Rect(
+                center_x - radius,
+                center_y - radius,
+                radius * 2,
+                radius * 2
+            )
+            
+            # Draw the arc as a semi-circle with the mouth cutout
+            # We need to draw the arc and then connect it to center for the pie shape
+            points = [(center_x, center_y)]  # Start at center
+            
+            # Add points around the arc
+            num_points = 20  # Number of points for a smooth circle
+            for i in range(num_points + 1):
+                angle_rad = end_rad + (start_rad - end_rad + 2*math.pi) % (2*math.pi) * i / num_points
+                x = center_x + radius * math.cos(angle_rad)
+                y = center_y + radius * math.sin(angle_rad)
+                points.append((x, y))
+            
+            # Close the shape
+            points.append((center_x, center_y))
+            
+            # Draw the full shape
+            pygame.draw.polygon(screen, (255, 255, 0), points)
         else:
-            # Open mouth - circle with a wedge cut out
-            start_angle = math.radians(angle_offset - mouth_angle)
-            end_angle = math.radians(angle_offset + mouth_angle)
-            
-            # Draw the main yellow circle
+            # Closed mouth - just a full yellow circle
             pygame.draw.circle(screen, (255, 255, 0), (center_x, center_y), radius)
-            
-            # Draw the mouth cutout as a black triangle
-            points = [
-                (center_x, center_y),
-                (center_x + radius * math.cos(start_angle), center_y + radius * math.sin(start_angle)),
-                (center_x + radius * math.cos(end_angle), center_y + radius * math.sin(end_angle))
-            ]
-            pygame.draw.polygon(screen, (0, 0, 0), points)
