@@ -90,47 +90,46 @@ class Ghost(PathAgent):
         x = self.pos[1] * cell_size
         y = self.pos[0] * cell_size
         
-        # Draw the main ghost body (stopping at the bottom where waves start)
-        ghost_rect = pygame.Rect(x, y, cell_size, cell_size)
+        # Create a single polygon for the entire ghost body
+        ghost_points = []
         
-        # Create a surface for the ghost body with transparency
-        ghost_surface = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
-        # Draw upper part of ghost (full ellipse)
-        pygame.draw.ellipse(ghost_surface, self.color, (0, 0, cell_size, cell_size))
-        # Create a rectangle to cover the bottom part that will be replaced by waves
-        pygame.draw.rect(ghost_surface, (0, 0, 0, 0), (0, 3*cell_size//4, cell_size, cell_size//4))
-        # Blit the modified ghost body onto the main screen
-        screen.blit(ghost_surface, (x, y))
+        # Add points for the semi-circular top
+        num_arc_points = 10  # More points for smoother top arc
+        for i in range(num_arc_points + 1):
+            angle = math.pi * i / num_arc_points
+            arc_x = x + cell_size/2 - (cell_size/2) * math.cos(angle)
+            arc_y = y + cell_size/2 - (cell_size/2) * math.sin(angle)
+            ghost_points.append((arc_x, arc_y))
+            
+        # Right edge down to where waves start
+        ghost_points.append((x + cell_size, y + 3*cell_size//4))
         
-        # Draw the wavy bottom part
-        bottom_y = y + 3*cell_size//4  # Position at 3/4 down the ghost
-        num_waves = 5  # Number of waves at the bottom
-        wave_width = cell_size / num_waves
-        wave_height = cell_size // 4
+        # Create smooth wavy bottom
+        bottom_y = y + 3*cell_size//4
+        num_waves = 5
+        points_per_wave = 4  # More points per wave for smoothness
         
-        # Create points for the wavy bottom
-        points = []
-        # Start at the left side where the main body transitions to waves
-        points.append((x, bottom_y))
+        # Generate the waves from right to left
+        for i in range(num_waves * points_per_wave):
+            t = i / (num_waves * points_per_wave)  # Position along bottom (0 to 1)
+            wave_x = x + cell_size - t * cell_size
+            
+            # Use smoother sine function with offset for alternating waves
+            wave_freq = 5  # Number of complete waves
+            wave_height = cell_size // 6  # Less height for gentler waves
+            
+            # Calculate wave height with smooth animation
+            offset = math.sin(self.wave_animation_counter) * (wave_height / 3)
+            wave_y = bottom_y + math.sin(wave_freq * math.pi * t + self.wave_animation_counter) * wave_height + offset
+            
+            ghost_points.append((wave_x, wave_y))
+            
+        # Left edge back up to complete the shape
+        ghost_points.append((x, y + 3*cell_size//4))
+        ghost_points.append(ghost_points[0])  # Close the shape
         
-        # Add points for each wave
-        for i in range(num_waves + 1):
-            wave_x = x + i * wave_width
-            # Alternating wave pattern with animation offset
-            if i % 2 == 0:
-                offset = math.sin(self.wave_animation_counter) * (wave_height / 4)
-                wave_y = bottom_y + wave_height + offset
-            else:
-                offset = math.sin(self.wave_animation_counter + math.pi) * (wave_height / 4)
-                wave_y = bottom_y + offset
-                
-            points.append((wave_x, wave_y))
-        
-        # Add the right edge point to connect back to the main body
-        points.append((x + cell_size, bottom_y))
-        
-        # Draw the wavy bottom polygon
-        pygame.draw.polygon(screen, self.color, points)
+        # Draw the ghost as a single polygon
+        pygame.draw.polygon(screen, self.color, ghost_points)
         
         # Calculate eye positions
         eye_radius = cell_size // 5
