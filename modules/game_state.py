@@ -110,7 +110,22 @@ class GameState:
                     ghost.vulnerable = False
                     ghost.vulnerable_flash = False
         
-        # Update ghost states
+        # Update vulnerability timers for ALL ghosts, regardless of active status
+        # This ensures even inactive ghosts visibly respond to power mode
+        for ghost in self.ghosts:
+            # Update vulnerability state of ALL ghosts
+            if ghost.vulnerable:
+                ghost.vulnerable_timer -= 1
+                # Start flashing when almost done
+                if ghost.vulnerable_timer <= 60:  
+                    ghost.vulnerable_flash = True
+                # End vulnerability
+                if ghost.vulnerable_timer <= 0:
+                    ghost.vulnerable_just_ended = True
+                    ghost.vulnerable = False
+                    ghost.vulnerable_flash = False
+        
+        # Update active ghost movement and behavior
         for ghost in self.ghosts:
             if ghost.active and not ghost.eaten:
                 ghost.update(self.power_active)
@@ -149,12 +164,15 @@ class GameState:
         player_pos = tuple(self.player_pos)
         
         for ghost in self.ghosts:
-            if ghost.active and ghost.pos == player_pos:
+            # Allow collision with ANY ghost at the player's position (active or not)
+            if ghost.pos == player_pos:
                 if self.power_active and ghost.vulnerable and not ghost.eaten:
-                    # Eat the ghost
+                    # Player can eat ANY vulnerable ghost, even inactive ones
+                    # Eating an inactive ghost activates it and sends it back to spawn
+                    ghost.active = True  # Force activation so it can return to spawn
                     self._handle_ghost_eaten(ghost)
-                elif not ghost.eaten:
-                    # Player gets eaten
+                elif ghost.active and not ghost.eaten:
+                    # Only active, non-eaten ghosts can eat the player
                     self._handle_ghost_collision()
                 break
     
@@ -234,10 +252,9 @@ class GameState:
         self.power_timer = self.power_duration
         self.ghost_points_multiplier = 1
         
-        # Make all active ghosts vulnerable
+        # Make ALL ghosts vulnerable, regardless of active state
         for ghost in self.ghosts:
-            if ghost.active and not ghost.eaten:
-                ghost.make_vulnerable(self.power_duration)
+            ghost.make_vulnerable(self.power_duration)
     
     def _reset_positions(self) -> None:
         """Reset player and ghost positions after losing a life."""

@@ -115,7 +115,9 @@ class Ghost(PathAgent):
                 ghost_color = (255, 255, 255)  # White for flashing
             else:
                 ghost_color = (0, 0, 255)  # Blue for vulnerable
-        elif self.eaten:
+        
+        # Even if vulnerable, if the ghost is eaten, only show eyes
+        if self.eaten:
             # For eaten ghosts, don't draw the body, just the eyes
             self._draw_eyes_only(screen, cell_size)
             return
@@ -273,7 +275,8 @@ class Ghost(PathAgent):
         """Make the ghost vulnerable for the specified duration."""
         self.vulnerable = True
         self.vulnerable_timer = duration
-        self.eaten = False
+        # Don't reset eaten state - allow a ghost to be both eaten and vulnerable
+        # self.eaten = False  <- Remove this line
         self.vulnerable_flash = False
     
     def get_eaten(self) -> None:
