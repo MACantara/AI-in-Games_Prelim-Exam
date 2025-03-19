@@ -33,6 +33,10 @@ def reconstruct_path(came_from: Dict[Position, Position], current: Position) -> 
 
 def astar_path(grid: Grid, start: Position, goal: Position) -> List[Position]:
     """Find path using A* algorithm."""
+    # Special case for direct path to spawn (when ghost is eaten)
+    if grid is None:
+        return [start, goal]
+        
     # First, ensure the goal is valid and within bounds
     if not (0 <= goal[0] < len(grid) and 0 <= goal[1] < len(grid[0])):
         # If target is out of bounds, find closest valid position

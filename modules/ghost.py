@@ -280,11 +280,20 @@ class Ghost(PathAgent):
         self.eaten = True
         self.vulnerable = False
         self.path = []
-        # Set path back to spawn
-        self.set_path([self.pos, self.start_pos])
+        self.path_index = 0  # Reset path index
+        self.moving = True   # Make sure it's moving
+        
+        # Create direct path back to spawn
+        path = astar_path(None, self.pos, self.start_pos)
+        if path and len(path) > 1:
+            self.path = path
+        else:
+            # Fallback if path finding fails
+            self.path = [self.pos, self.start_pos]
+        
         # Start respawn timer
         self.respawn_timer = self.respawn_delay
-        
+
     def update(self, power_active: bool) -> None:
         """Update ghost state."""
         if self.vulnerable:
@@ -318,7 +327,14 @@ class Ghost(PathAgent):
                           player_pos: Tuple[int, int], player_direction: Tuple[int, int]) -> None:
         """Update all ghosts movement and pathfinding."""
         for ghost in ghosts:
+            # Skip inactive ghosts
             if not ghost.active:
+                continue
+                
+            # Skip eaten ghosts - they should follow their return path
+            if ghost.eaten:
+                # Just move along the existing path to spawn
+                ghost.move_step()
                 continue
                 
             # Always get new target and calculate new path
