@@ -24,6 +24,7 @@ class PacmanGame:
         self.ghost_move_delay = 0
         self.player = None
         self.ui = UI(self.screen, self.cell_size)
+        self.paused = False  # Add pause state
         
         # High score handling
         self.high_score = self._load_high_score()
@@ -180,13 +181,23 @@ class PacmanGame:
                     self._init_game()
                 # Ignore keypresses during startup
             else:
-                # Regular game input handling - ignore during dying animation
+                # Regular game input handling
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_F3:
+                    # Handle escape key for pause toggle
+                    if event.key == pygame.K_ESCAPE:
+                        self.paused = not self.paused
+                        # Pause/unpause music based on game state
+                        if self.paused:
+                            if pygame.mixer.music.get_busy():
+                                pygame.mixer.music.pause()
+                        else:
+                            pygame.mixer.music.unpause()
+                    elif event.key == pygame.K_F3:
                         self.state.debug_mode = not self.state.debug_mode
                     elif event.key == pygame.K_r and (self.state.game_over or self.state.victory) and not self.state.dying:
                         self._restart_game()
-                    elif not self.state.game_over and not self.state.dying:
+                    # Only process movement keys if not paused, not game over, and not dying
+                    elif not self.paused and not self.state.game_over and not self.state.dying:
                         self.player.handle_key_input(event.key)
         return True
     
@@ -300,6 +311,10 @@ class PacmanGame:
                 self._init_game()
             return
         
+        # Skip updates if paused
+        if self.paused:
+            return
+            
         # Update player position and collect dots - but not if game is over or victory state
         if not self.state.game_over and not self.state.victory:
             # Store position before movement to check if we moved
@@ -376,7 +391,8 @@ class PacmanGame:
                 victory_timer=self.state.victory_timer,
                 victory_animation_length=self.state.victory_animation_length,
                 collectibles_remaining=self.state.collectibles_remaining,
-                total_collectibles=self.state.total_collectibles
+                total_collectibles=self.state.total_collectibles,
+                paused=self.paused  # Pass pause state to UI
             )
     
     def _draw_startup_screen(self) -> None:

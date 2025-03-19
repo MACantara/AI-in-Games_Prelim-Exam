@@ -16,7 +16,8 @@ class UI:
                     game_over: bool = False, lives: int = 3, dying: bool = False, death_timer: int = 0,
                     death_animation_length: int = 90, high_score: int = 0, victory: bool = False,
                     victory_timer: int = 0, victory_animation_length: int = 180,
-                    collectibles_remaining: int = 0, total_collectibles: int = 0) -> None:
+                    collectibles_remaining: int = 0, total_collectibles: int = 0, 
+                    paused: bool = False) -> None:
         """Main rendering method that draws everything in the game."""
         self.screen.fill((0, 0, 0))  # Clear screen
         self._draw_grid(grid)
@@ -47,7 +48,9 @@ class UI:
             self._draw_collectibles_info(collectibles_remaining, total_collectibles)
         
         # Show specific overlays based on game state
-        if victory:
+        if paused:
+            self._draw_pause_overlay()
+        elif victory:
             # Always show victory screen if in victory state, animation capped at 100%
             victory_progress = min(1.0, victory_timer / victory_animation_length)
             self._draw_victory_screen(victory_progress)
@@ -237,3 +240,45 @@ class UI:
         font = pygame.font.Font(None, 24)
         text = font.render(f"Dots remaining: {remaining}/{total}", True, (255, 255, 255))
         self.screen.blit(text, (10, self.height - 60))
+    
+    def _draw_pause_overlay(self) -> None:
+        """Display pause message and instructions."""
+        # Semi-transparent overlay
+        overlay = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 160))  # Black with 60% transparency
+        self.screen.blit(overlay, (0, 0))
+        
+        # Pause text
+        font_large = pygame.font.Font(None, 72)
+        pause_text = font_large.render("PAUSED", True, (255, 255, 255))
+        pause_rect = pause_text.get_rect(center=(self.width // 2, self.height // 2 - 40))
+        
+        # Add highlight/shadow effect
+        shadow_offset = 3
+        shadow_text = font_large.render("PAUSED", True, (70, 70, 200))
+        shadow_rect = shadow_text.get_rect(center=(self.width // 2 + shadow_offset, 
+                                                  self.height // 2 - 40 + shadow_offset))
+        self.screen.blit(shadow_text, shadow_rect)
+        self.screen.blit(pause_text, pause_rect)
+        
+        # Instructions text
+        font_small = pygame.font.Font(None, 36)
+        instructions_text = font_small.render("Press ESC to resume", True, (200, 200, 200))
+        instructions_rect = instructions_text.get_rect(center=(self.width // 2, self.height // 2 + 20))
+        self.screen.blit(instructions_text, instructions_rect)
+        
+        # Controls reminder
+        controls_font = pygame.font.Font(None, 28)
+        controls_text = [
+            "Controls:",
+            "Arrow Keys / WASD: Move",
+            "ESC: Pause/Resume",
+            "F3: Debug Mode"
+        ]
+        
+        y_pos = self.height // 2 + 80
+        for line in controls_text:
+            text = controls_font.render(line, True, (180, 180, 180))
+            rect = text.get_rect(center=(self.width // 2, y_pos))
+            self.screen.blit(text, rect)
+            y_pos += 30
