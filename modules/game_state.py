@@ -23,6 +23,13 @@ class GameState:
     death_animation_length: int = 90  # Length of death animation in frames (3 seconds at 30fps)
     death_callback: Optional[Callable] = field(default=None, repr=False)
     respawn_callback: Optional[Callable] = field(default=None, repr=False)
+    power_active: bool = False
+    power_timer: int = 0
+    power_duration: int = 300  # 10 seconds at 30fps
+    ghost_points: int = 200  # Base points for eating a ghost
+    ghost_points_multiplier: int = 1  # Multiplier increases with each ghost eaten
+    fruit_eaten_callback: Optional[Callable] = field(default=None, repr=False)
+    ghost_eaten_callback: Optional[Callable] = field(default=None, repr=False)
     
     def __post_init__(self):
         if self.ghost_release_times is None:
@@ -75,6 +82,22 @@ class GameState:
         self.game_timer += 1
         self.scatter_timer = (self.scatter_timer + 1) % 400
         
+        # Update power mode timer
+        if self.power_active:
+            self.power_timer -= 1
+            if self.power_timer <= 0:
+                self.power_active = False
+                self.ghost_points_multiplier = 1
+                # Reset ghost vulnerability
+                for ghost in self.ghosts:
+                    ghost.vulnerable = False
+                    ghost.vulnerable_flash = False
+        
+        # Update ghost states
+        for ghost in self.ghosts:
+            if ghost.active and not ghost.eaten:
+                ghost.update(self.power_active)
+        
         # Update ghost states
         scatter_mode = self.scatter_timer >= 200
         for i, release_time in enumerate(self.ghost_release_times):
@@ -91,9 +114,15 @@ class GameState:
     def _check_ghost_collisions(self) -> None:
         """Check if player has collided with any ghost."""
         player_pos = tuple(self.player_pos)
+        
         for ghost in self.ghosts:
             if ghost.active and ghost.pos == player_pos:
-                self._handle_ghost_collision()
+                if self.power_active and ghost.vulnerable and not ghost.eaten:
+                    # Eat the ghost
+                    self._handle_ghost_eaten(ghost)
+                elif not ghost.eaten:
+                    # Player gets eaten
+                    self._handle_ghost_collision()
                 break
     
     def set_death_callback(self, callback: Callable) -> None:
@@ -103,6 +132,14 @@ class GameState:
     def set_respawn_callback(self, callback: Callable) -> None:
         """Set callback function to be called when player respawns after death."""
         self.respawn_callback = callback
+    
+    def set_fruit_eaten_callback(self, callback: Callable) -> None:
+        """Set callback function to be called when player eats a power fruit."""
+        self.fruit_eaten_callback = callback
+        
+    def set_ghost_eaten_callback(self, callback: Callable) -> None:
+        """Set callback function to be called when player eats a ghost."""
+        self.ghost_eaten_callback = callback
     
     def _handle_ghost_collision(self) -> None:
         """Handle what happens when player collides with ghost."""
@@ -122,6 +159,52 @@ class GameState:
         # Set game over flag if needed
         if self.lives <= 0:
             self.game_over = True
+    
+    def _handle_ghost_eaten(self, ghost: 'Ghost') -> None:
+        """Handle the player eating a vulnerable ghost."""
+        # Calculate points (200, 400, 800, 1600)
+        points = self.ghost_points * self.ghost_points_multiplier
+        self.score += points
+        self.ghost_points_multiplier *= 2
+        
+        # Mark ghost as eaten
+        ghost.get_eaten()
+        
+        # Call callback if set
+        if self.ghost_eaten_callback:
+            self.ghost_eaten_callback()
+    
+    def _move_and_collect_item(self, new_pos: List[int]) -> None:
+        """Move player to new position and collect items there."""
+        row, col = new_pos
+        
+        # Check for dot
+        if self.grid[row][col] == 2:
+            self.grid[row][col] = 0
+            self.score += self.dot_points
+            
+        # Check for power pellet/fruit
+        elif self.grid[row][col] == 3:
+            self.grid[row][col] = 0
+            self.score += self.power_pellet_points
+            self._activate_power_mode()
+            # Call fruit eaten callback
+            if self.fruit_eaten_callback:
+                self.fruit_eaten_callback()
+                
+        # Update position
+        self.player_pos = new_pos
+    
+    def _activate_power_mode(self) -> None:
+        """Activate the power mode where ghosts are vulnerable."""
+        self.power_active = True
+        self.power_timer = self.power_duration
+        self.ghost_points_multiplier = 1
+        
+        # Make all active ghosts vulnerable
+        for ghost in self.ghosts:
+            if ghost.active and not ghost.eaten:
+                ghost.make_vulnerable(self.power_duration)
     
     def _reset_positions(self) -> None:
         """Reset player and ghost positions after losing a life."""

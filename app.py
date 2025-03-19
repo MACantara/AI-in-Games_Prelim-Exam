@@ -29,7 +29,10 @@ class PacmanGame:
         self.audio_paths = {
             'startup': os.path.join(os.path.dirname(__file__), "static/audio/start-up.mp3"),
             'eating': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-eatting.mp3"),
-            'dying': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-dying.mp3")
+            'dying': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-dying.mp3"),
+            'fruit': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-eatting-fruit.mp3"),
+            'ghost_scared': os.path.join(os.path.dirname(__file__), "static/audio/ghost-scared.mp3"),
+            'ghost_eaten': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-eatting-ghost.mp3")
         }
         self.sound_effects = {}
         self._load_sound_effects()
@@ -58,6 +61,7 @@ class PacmanGame:
     def _load_sound_effects(self):
         """Load sound effects that aren't played as music."""
         try:
+            # Load death sound
             if os.path.exists(self.audio_paths['dying']):
                 self.sound_effects['dying'] = pygame.mixer.Sound(self.audio_paths['dying'])
                 # Get the length of the death sound to sync with animation
@@ -65,6 +69,25 @@ class PacmanGame:
             else:
                 print(f"Warning: Could not find dying sound at {self.audio_paths['dying']}")
                 self.dying_sound_length = 90  # Default length in frames
+                
+            # Load fruit eating sound
+            if os.path.exists(self.audio_paths['fruit']):
+                self.sound_effects['fruit'] = pygame.mixer.Sound(self.audio_paths['fruit'])
+            else:
+                print(f"Warning: Could not find fruit eating sound at {self.audio_paths['fruit']}")
+                
+            # Load ghost scared (vulnerability) sound
+            if os.path.exists(self.audio_paths['ghost_scared']):
+                self.sound_effects['ghost_scared'] = pygame.mixer.Sound(self.audio_paths['ghost_scared'])
+            else:
+                print(f"Warning: Could not find ghost scared sound at {self.audio_paths['ghost_scared']}")
+                
+            # Load ghost eaten sound
+            if os.path.exists(self.audio_paths['ghost_eaten']):
+                self.sound_effects['ghost_eaten'] = pygame.mixer.Sound(self.audio_paths['ghost_eaten'])
+            else:
+                print(f"Warning: Could not find ghost eaten sound at {self.audio_paths['ghost_eaten']}")
+                
         except pygame.error as e:
             print(f"Error loading sound: {e}")
             self.dying_sound_length = 90  # Default length in frames
@@ -76,6 +99,8 @@ class PacmanGame:
         self.state.death_animation_length = self.dying_sound_length
         self.state.set_death_callback(self._on_player_death)
         self.state.set_respawn_callback(self._on_player_respawn)
+        self.state.set_fruit_eaten_callback(self._on_fruit_eaten)
+        self.state.set_ghost_eaten_callback(self._on_ghost_eaten)
         self.player = Player(self.state.player_pos)
         self.ghost_move_delay = 0
         # Start the eating sound loop when the game begins
@@ -117,7 +142,35 @@ class PacmanGame:
         """Callback for when player respawns after death - restart eating sound and update player position."""
         # Update player position to match the state's reset position
         self.player.pos = self.state.player_pos.copy()
-        self._play_eating_sound_loop()
+        
+        # If power mode is active, play ghost scared sound
+        if self.state.power_active:
+            if 'ghost_scared' in self.sound_effects:
+                pygame.mixer.music.load(self.audio_paths['ghost_scared'])
+                pygame.mixer.music.play(-1)  # Loop
+        else:
+            # Otherwise play normal eating sound
+            self._play_eating_sound_loop()
+        
+    def _on_fruit_eaten(self):
+        """Callback for when player eats a power fruit."""
+        # Stop the normal eating sound
+        pygame.mixer.music.stop()
+        
+        # Play fruit eating sound effect
+        if 'fruit' in self.sound_effects:
+            self.sound_effects['fruit'].play()
+            
+        # Start the ghost scared sound in a loop
+        if 'ghost_scared' in self.sound_effects:
+            pygame.mixer.music.load(self.audio_paths['ghost_scared'])
+            pygame.mixer.music.play(-1)  # Loop until power mode ends
+
+    def _on_ghost_eaten(self):
+        """Callback for when player eats a ghost."""
+        # Play ghost eaten sound
+        if 'ghost_eaten' in self.sound_effects:
+            self.sound_effects['ghost_eaten'].play()
         
     def _restart_game(self) -> None:
         """Restart the game after game over."""
@@ -147,11 +200,23 @@ class PacmanGame:
         
         # Update player position and collect dots - but not if game is over
         if not self.state.game_over:
+            old_pos = self.player.pos.copy()
             self.player.update_position(self.state.grid, self.state.dying)
             
             # Update game state with current player position and direction
             self.state.player_pos = self.player.pos
             self.state.player_direction = self.player.direction
+            
+            # Check if player ate a fruit/power pellet
+            if tuple(old_pos) != tuple(self.player.pos):
+                row, col = self.player.pos
+                if self.state.grid[row][col] == 3:  # Power pellet/fruit
+                    self.state.grid[row][col] = 0  # Remove it
+                    self.state.score += self.player.power_pellet_points
+                    self.state._activate_power_mode()
+                    # Call fruit eaten callback
+                    if self.state.fruit_eaten_callback:
+                        self.state.fruit_eaten_callback()
         
         # Update ghost positions
         self.ghost_move_delay = (self.ghost_move_delay + 1) % 6
@@ -164,6 +229,10 @@ class PacmanGame:
             )
         
         self.state.update()
+        
+        # Check if power mode just ended (to restart normal eating sound)
+        if hasattr(self.state, 'power_active') and not self.state.power_active and not self.state.dying and not pygame.mixer.music.get_busy():
+            self._play_eating_sound_loop()
         
     def render(self) -> None:
         """Render the game state using the UI handler."""

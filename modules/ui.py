@@ -1,5 +1,6 @@
 import pygame
 from typing import List, Tuple
+import math
 
 class UI:
     """Handles all UI and rendering functionality for the game."""
@@ -55,10 +56,21 @@ class UI:
                 
                 if grid[i][j] == 1:  # Wall
                     pygame.draw.rect(self.screen, (51, 51, 51), rect)
-                elif grid[i][j] == 2:  # Point
+                elif grid[i][j] == 2:  # Regular dot
                     dot_size = self.cell_size // 4
                     dot_pos = (x + self.cell_size//2, y + self.cell_size//2)
                     pygame.draw.circle(self.screen, (255, 255, 0), dot_pos, dot_size)
+                elif grid[i][j] == 3:  # Power pellet/fruit
+                    dot_size = self.cell_size // 3  # Bigger than regular dots
+                    dot_pos = (x + self.cell_size//2, y + self.cell_size//2)
+                    
+                    # Draw fruit as a larger, pulsing circle
+                    pulse_factor = (math.sin(pygame.time.get_ticks() * 0.01) + 1) * 0.1 + 0.9  # 0.9 to 1.1
+                    pygame.draw.circle(self.screen, (255, 50, 50), dot_pos, int(dot_size * pulse_factor))
+                    
+                    # Add small white highlight to make it look more like a cherry
+                    highlight_pos = (dot_pos[0] - dot_size//3, dot_pos[1] - dot_size//3)
+                    pygame.draw.circle(self.screen, (255, 255, 255), highlight_pos, dot_size//4)
     
     def _draw_entities(self, player, ghosts: List) -> None:
         """Draw player and ghosts using their draw methods."""

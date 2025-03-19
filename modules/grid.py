@@ -9,6 +9,7 @@ def create_grid() -> Tuple[List[List[int]], List[List[float]], Tuple[int, int]]:
 
     # Define the map based on the provided image
     # '#' represents a wall (1), ' ' or other characters represent open space (0)
+    # '*' represents dots (2), '@' represents power pellets/fruits (3)
 
     map_data = [
         "#######################",
@@ -49,6 +50,9 @@ def create_grid() -> Tuple[List[List[int]], List[List[float]], Tuple[int, int]]:
                 heights[row_index][col_index] = 1.0
             elif cell_data == '*':
                 grid[row_index][col_index] = 2  # 2 represents points
+                heights[row_index][col_index] = 0.0
+            elif cell_data == '@':
+                grid[row_index][col_index] = 3  # 3 represents power pellets/fruits
                 heights[row_index][col_index] = 0.0
             elif cell_data == 'C':
                 # 'C' represents the player spawn point
