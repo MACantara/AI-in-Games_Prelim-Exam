@@ -45,7 +45,7 @@ class PacmanGame:
     def update(self) -> None:
         """Update game state."""
         # Update player position and collect dots
-        self.player.update_position(self.state.grid)
+        self.player.update_position(self.state.grid, self.state.dying)
         
         # Update game state with current player position and direction
         self.state.player_pos = self.player.pos

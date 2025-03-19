@@ -38,11 +38,15 @@ class Player:
         elif key in (pygame.K_RIGHT, pygame.K_d):
             self.requested_direction = (0, 1)
     
-    def update_position(self, grid: List[List[int]]) -> None:
+    def update_position(self, grid: List[List[int]], is_dying: bool = False) -> None:
         """Update player position based on current direction."""
         # Update mouth animation every frame for smoother animation
         self._update_animation()
         
+        # Skip movement if player is dying
+        if is_dying:
+            return
+            
         # Control movement speed
         self.move_delay = (self.move_delay + 1) % self.move_speed
         if self.move_delay != 0:
