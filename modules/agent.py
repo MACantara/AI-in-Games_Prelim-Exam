@@ -12,6 +12,7 @@ class PathAgent:
         self.path_index: int = 0
         self.moving: bool = False
         self.direction: int = 0  # 0: right, 90: down, 180: left, 270: up
+        self.path_consistency_counter: int = 0  # To prevent rapid path changes
 
     def set_path(self, path: List[Position]) -> None:
         """Set a new path for the agent to follow."""
@@ -22,8 +23,15 @@ class PathAgent:
         if self.moving and self.path and len(self.path) > self.path_index + 1:
             # Only update path if it's significantly different
             if path[1] != self.path[min(self.path_index + 1, len(self.path) - 1)]:
+                # Check if we just changed paths recently
+                if self.path_consistency_counter > 0:
+                    # Stick with current path for a bit longer
+                    self.path_consistency_counter -= 1
+                    return
+                    
                 self.path = path
                 self.path_index = 0
+                self.path_consistency_counter = 5  # Don't change path for the next 5 frames
         else:
             self.path = path
             self.path_index = 0

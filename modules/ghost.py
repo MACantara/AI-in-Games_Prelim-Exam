@@ -3,7 +3,7 @@ import math
 from typing import Tuple, Optional, List
 from dataclasses import dataclass
 from .agent import PathAgent
-from .algorithms import astar_path
+from .algorithms import astar_path, find_flee_target
 
 Position = Tuple[int, int]
 Color = Tuple[int, int, int]
@@ -45,6 +45,8 @@ class Ghost(PathAgent):
         self.eaten = False  # Whether the ghost has been eaten and is returning to spawn
         self.respawn_timer = 0  # Timer for respawning after being eaten
         self.respawn_delay = 150  # 5 seconds at 30fps
+        self.path_recalculation_timer = 0  # Add timer to prevent frequent path recalculation
+        self.path_recalculation_delay = 15  # Recalculate path every 15 frames
 
     def reset_to_start(self) -> None:
         """Reset ghost to its starting position and state."""
@@ -57,6 +59,10 @@ class Ghost(PathAgent):
     def get_chase_target(self, player_pos: Position, player_direction: Position, 
                         blinky_pos: Optional[Position] = None) -> Position:
         """Calculate target position based on ghost type and game state."""
+        # If vulnerable, run away from player
+        if self.vulnerable:
+            return self._get_flee_target(player_pos)
+            
         if self.scatter_mode:
             return self.scatter_target
 
@@ -97,6 +103,11 @@ class Ghost(PathAgent):
         distance = ((player_pos[0] - self.pos[0])**2 + 
                    (player_pos[1] - self.pos[1])**2)**0.5
         return self.scatter_target if distance < 8 else player_pos
+
+    def _get_flee_target(self, player_pos: Position) -> Position:
+        """Calculate a target position that's away from the player (flee behavior)."""
+        # Use the find_flee_target function from algorithms.py
+        return find_flee_target(self.pos, player_pos)
 
     def draw(self, screen, cell_size: int) -> None:
         """Draw the ghost with direction-indicating eyes and wavy bottom."""
@@ -397,41 +408,68 @@ class Ghost(PathAgent):
                 # Move along the path to spawn
                 ghost.move_step()
                 continue
+            
+            # Increment path recalculation timer
+            ghost.path_recalculation_timer += 1
+            
+            # Only recalculate path periodically to prevent back-and-forth behavior
+            if ghost.path_recalculation_timer >= ghost.path_recalculation_delay or not ghost.path or ghost.path_index >= len(ghost.path) - 1:
+                # Reset timer
+                ghost.path_recalculation_timer = 0
                 
-            # Always get new target and calculate new path
-            blinky_pos = ghosts[0].pos if ghost.ghost_type != 'blinky' else None
-            target = ghost.get_chase_target(
-                player_pos,
-                player_direction,
-                blinky_pos
-            )
-            
-            # Ensure target is within grid bounds
-            target_row = max(0, min(target[0], len(grid) - 1))
-            target_col = max(0, min(target[1], len(grid[0]) - 1))
-            adjusted_target = (target_row, target_col)
-            
-            # Avoid targeting walls
-            if grid[target_row][target_col] == 1:
-                # Try to find a nearby non-wall position
-                for dr, dc in [(0,1), (1,0), (0,-1), (-1,0)]:
-                    nr, nc = target_row + dr, target_col + dc
-                    if (0 <= nr < len(grid) and 0 <= nc < len(grid[0]) and 
-                            grid[nr][nc] != 1):
-                        adjusted_target = (nr, nc)
-                        break
-            
-            # Calculate new path to the adjusted target
-            path = astar_path(grid, ghost.pos, adjusted_target)
-            
-            # Don't update path if the resulting path is empty or just the current position
-            if path and len(path) > 1:
-                ghost.set_path(path)
+                # Always get new target and calculate new path
+                blinky_pos = ghosts[0].pos if ghost.ghost_type != 'blinky' else None
+                target = ghost.get_chase_target(
+                    player_pos,
+                    player_direction,
+                    blinky_pos
+                )
+                
+                # Ensure target is within grid bounds
+                target_row = max(0, min(target[0], len(grid) - 1))
+                target_col = max(0, min(target[1], len(grid[0]) - 1))
+                adjusted_target = (target_row, target_col)
+                
+                # Avoid targeting walls
+                if grid[target_row][target_col] == 1:
+                    # Try to find a nearby non-wall position
+                    for dr, dc in [(0,1), (1,0), (0,-1), (-1,0)]:
+                        nr, nc = target_row + dr, target_col + dc
+                        if (0 <= nr < len(grid) and 0 <= nc < len(grid[0]) and 
+                                grid[nr][nc] != 1):
+                            adjusted_target = (nr, nc)
+                            break
+                
+                # Calculate new path to the adjusted target
+                flee_mode = ghost.vulnerable  # Pass true if ghost is vulnerable
+                path = astar_path(grid, ghost.pos, adjusted_target, flee_mode=flee_mode)
+                
+                # Don't update path if the resulting path is empty or just the current position
+                if path and len(path) > 1:
+                    ghost.set_path(path)
             
             # Attempt to move the ghost
             if not ghost.move_step() and ghost.active:
-                # If we couldn't move, try to recalculate a path
-                new_path = astar_path(grid, ghost.pos, adjusted_target)
+                # If we couldn't move, try to recalculate a path immediately
+                blinky_pos = ghosts[0].pos if ghost.ghost_type != 'blinky' else None
+                target = ghost.get_chase_target(player_pos, player_direction, blinky_pos)
+                
+                # Adjust target to be within valid bounds
+                target_row = max(0, min(target[0], len(grid) - 1))
+                target_col = max(0, min(target[1], len(grid[0]) - 1))
+                adjusted_target = (target_row, target_col)
+                
+                # Avoid targeting walls
+                if grid[target_row][target_col] == 1:
+                    for dr, dc in [(0,1), (1,0), (0,-1), (-1,0)]:
+                        nr, nc = target_row + dr, target_col + dc
+                        if (0 <= nr < len(grid) and 0 <= nc < len(grid[0]) and 
+                                grid[nr][nc] != 1):
+                            adjusted_target = (nr, nc)
+                            break
+                            
+                flee_mode = ghost.vulnerable
+                new_path = astar_path(grid, ghost.pos, adjusted_target, flee_mode=flee_mode)
                 if new_path and len(new_path) > 1:
                     ghost.path = new_path
                     ghost.path_index = 0

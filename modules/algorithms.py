@@ -2,6 +2,7 @@
 This module implements A* and Dijkstra search steps with helper functions.
 """
 import heapq
+import random
 from typing import Tuple, List, Dict, Generator, Any
 
 # Type aliases for clarity.
@@ -31,8 +32,30 @@ def reconstruct_path(came_from: Dict[Position, Position], current: Position) -> 
         path.append(current)
     return path[::-1]
 
-def astar_path(grid: Grid, start: Position, goal: Position) -> List[Position]:
-    """Find path using A* algorithm."""
+def find_flee_target(ghost_pos: Position, player_pos: Position) -> Position:
+    """Find a position to flee to (away from player)."""
+    # Calculate vector from player to ghost
+    dx = ghost_pos[0] - player_pos[0]
+    dy = ghost_pos[1] - player_pos[1]
+    
+    # If the ghost is exactly on the player, choose a random direction
+    if dx == 0 and dy == 0:
+        dx = random.choice([-1, 1])
+        dy = random.choice([-1, 1])
+    
+    # Scale the vector to get a point further away
+    scale = 8.0  # Try to run 8 cells away
+    target_x = ghost_pos[0] + int(dx * scale)
+    target_y = ghost_pos[1] + int(dy * scale)
+    
+    # Add some randomness to prevent ghosts from clustering
+    target_x += random.randint(-2, 2)
+    target_y += random.randint(-2, 2)
+    
+    return (target_x, target_y)
+
+def astar_path(grid: Grid, start: Position, goal: Position, flee_mode: bool = False) -> List[Position]:
+    """Find path using A* algorithm, with option for flee behavior."""
     # Special case for direct path to spawn (when ghost is eaten)
     if grid is None:
         return [start, goal]
@@ -45,7 +68,10 @@ def astar_path(grid: Grid, start: Position, goal: Position) -> List[Position]:
     # Don't try to path to walls
     if grid[goal[0]][goal[1]] == 1:
         return [start]
-        
+    
+    # In flee mode, avoid getting too close to the goal
+    # We'll still path to the goal but with a modified heuristic
+    
     open_set = [(0, start)]
     closed_set = set()
     came_from = {}
@@ -60,7 +86,15 @@ def astar_path(grid: Grid, start: Position, goal: Position) -> List[Position]:
         _, current = heapq.heappop(open_set)
         
         if current == goal:
-            return reconstruct_path(came_from, current)
+            path = reconstruct_path(came_from, current)
+            
+            # In flee mode, sometimes randomize the path to create less predictable movement
+            if flee_mode and len(path) > 3 and random.random() < 0.3:
+                # Take a random turn sometimes
+                turn_point = random.randint(1, min(5, len(path)-1))
+                return path[:turn_point]
+                
+            return path
             
         closed_set.add(current)
         
@@ -72,14 +106,28 @@ def astar_path(grid: Grid, start: Position, goal: Position) -> List[Position]:
             if neighbor not in g_score or tentative_g < g_score[neighbor]:
                 came_from[neighbor] = current
                 g_score[neighbor] = tentative_g
-                f_score = tentative_g + heuristic(neighbor, goal)
+                
+                # Modified heuristic for flee mode
+                if flee_mode:
+                    # In flee mode, we want to minimize the function f = g + h
+                    # But make the heuristic favor paths away from the goal
+                    f_score = tentative_g - heuristic(neighbor, goal)
+                else:
+                    # Normal A* behavior
+                    f_score = tentative_g + heuristic(neighbor, goal)
+                    
                 heapq.heappush(open_set, (f_score, neighbor))
     
     # If we reached here, no path was found or max iterations reached
     # Return at least a path to a nearby valid position if possible
     if came_from:
-        # Find the position closest to the goal that we did reach
-        best_pos = min(came_from.keys(), key=lambda pos: heuristic(pos, goal))
+        if flee_mode:
+            # In flee mode, find the position furthest from the goal
+            best_pos = max(came_from.keys(), key=lambda pos: heuristic(pos, goal))
+        else:
+            # In chase mode, find the position closest to the goal
+            best_pos = min(came_from.keys(), key=lambda pos: heuristic(pos, goal))
+            
         return reconstruct_path(came_from, best_pos)
         
     return [start]  # Return single-point path if no path found
