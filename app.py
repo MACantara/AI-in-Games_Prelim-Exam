@@ -48,11 +48,11 @@ class PacmanGame:
                 return False
             
             if self.in_startup:
-                # Skip startup screen if any key is pressed or startup music ends
-                if event.type == pygame.KEYDOWN or not pygame.mixer.music.get_busy():
+                # Only check if music has ended, ignore key presses during startup
+                if not pygame.mixer.music.get_busy():
                     self.in_startup = False
-                    pygame.mixer.music.stop()  # Stop music if it's still playing
                     self._init_game()
+                # Ignore keypresses during startup
             else:
                 # Regular game input handling
                 if event.type == pygame.KEYDOWN:
@@ -146,30 +146,6 @@ class PacmanGame:
                 self.state.death_timer,
                 self.state.death_animation_length
             )
-
-        # Add overlay with startup instructions
-        overlay = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 180))  # Semi-transparent black overlay
-        self.screen.blit(overlay, (0, 0))
-        
-        # Draw title
-        font_large = pygame.font.Font(None, 72)
-        title_text = font_large.render("PACMAN", True, (255, 255, 0))
-        title_rect = title_text.get_rect(center=(self.width // 2, self.height // 3))
-        self.screen.blit(title_text, title_rect)
-        
-        # Draw subtitle
-        font_medium = pygame.font.Font(None, 36)
-        subtitle_text = font_medium.render("with AI Enemies", True, (255, 255, 255))
-        subtitle_rect = subtitle_text.get_rect(center=(self.width // 2, self.height // 3 + 50))
-        self.screen.blit(subtitle_text, subtitle_rect)
-        
-        # Draw "Press any key" text
-        instruction_text = "Press any key to start"
-        instruction_render = font_medium.render(instruction_text, True, (255, 255, 255))
-        instruction_rect = instruction_render.get_rect(center=(self.width // 2, self.height * 2 // 3))
-        self.screen.blit(instruction_render, instruction_rect)
-        
         
     def run(self) -> None:
         """Main game loop."""
