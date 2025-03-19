@@ -299,7 +299,8 @@ class Ghost(PathAgent):
         if self.vulnerable:
             self.vulnerable_timer -= 1
             # Start flashing when almost done
-            if self.vulnerable_timer <= 60:  # Last 2 seconds (at 30fps)
+            # Increase warning period to 4 seconds (120 frames) to match longer power duration
+            if self.vulnerable_timer <= 120:  # Last 4 seconds (at 30fps)
                 self.vulnerable_flash = True
             # End vulnerability
             if self.vulnerable_timer <= 0:

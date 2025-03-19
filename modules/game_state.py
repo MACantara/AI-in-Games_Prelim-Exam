@@ -110,20 +110,11 @@ class GameState:
                     ghost.vulnerable = False
                     ghost.vulnerable_flash = False
         
-        # Update vulnerability timers for ALL ghosts, regardless of active status
-        # This ensures even inactive ghosts visibly respond to power mode
+        # Instead, just check for vulnerability ending
         for ghost in self.ghosts:
-            # Update vulnerability state of ALL ghosts
-            if ghost.vulnerable:
-                ghost.vulnerable_timer -= 1
-                # Start flashing when almost done
-                if ghost.vulnerable_timer <= 60:  
-                    ghost.vulnerable_flash = True
-                # End vulnerability
-                if ghost.vulnerable_timer <= 0:
-                    ghost.vulnerable_just_ended = True
-                    ghost.vulnerable = False
-                    ghost.vulnerable_flash = False
+            if ghost.vulnerable_just_ended:
+                # Propagate this to the game state's power_just_ended flag
+                self.power_just_ended = True
         
         # Update active ghost movement and behavior
         for ghost in self.ghosts:

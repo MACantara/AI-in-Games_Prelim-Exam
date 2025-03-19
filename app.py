@@ -79,14 +79,14 @@ class PacmanGame:
             # Load ghost scared (vulnerability) sound
             if os.path.exists(self.audio_paths['ghost_scared']):
                 self.sound_effects['ghost_scared'] = pygame.mixer.Sound(self.audio_paths['ghost_scared'])
-                # Calculate power duration as twice the length of ghost_scared sound (in frames)
+                # Calculate power duration as four times the length of ghost_scared sound (in frames)
                 ghost_scared_length_secs = self.sound_effects['ghost_scared'].get_length()
                 self.ghost_scared_frames = int(ghost_scared_length_secs * 30)  # Convert seconds to frames at 30fps
-                self.power_duration = self.ghost_scared_frames * 2  # Two complete plays
+                self.power_duration = self.ghost_scared_frames * 4  # Four complete plays
             else:
                 print(f"Warning: Could not find ghost scared sound at {self.audio_paths['ghost_scared']}")
                 self.ghost_scared_frames = 300  # Default fallback (10 seconds at 30fps)
-                self.power_duration = 600  # Default to 20 seconds if sound file missing
+                self.power_duration = 1200  # Default to 40 seconds if sound file missing
                 
             # Load ghost eaten sound
             if os.path.exists(self.audio_paths['ghost_eaten']):
@@ -98,7 +98,7 @@ class PacmanGame:
             print(f"Error loading sound: {e}")
             self.dying_sound_length = 90  # Default length in frames
             self.ghost_scared_frames = 300
-            self.power_duration = 600
+            self.power_duration = 1200  # Updated default to 40 seconds (4x longer)
     
     def _init_game(self):
         """Initialize the game state and player."""
