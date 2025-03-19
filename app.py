@@ -37,7 +37,8 @@ class PacmanGame:
             'fruit': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-eatting-fruit.mp3"),
             'ghost_scared': os.path.join(os.path.dirname(__file__), "static/audio/ghost-scared.mp3"),
             'ghost_eaten': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-eatting-ghost.mp3"),
-            'high_score': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-got-high-score.mp3")
+            'high_score': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-got-high-score.mp3"),
+            'victory': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-victory.mp3")
         }
         self.sound_effects = {}
         self._load_sound_effects()
@@ -125,6 +126,12 @@ class PacmanGame:
             else:
                 print(f"Warning: Could not find high score sound at {self.audio_paths['high_score']}")
                 
+            # Load victory sound
+            if os.path.exists(self.audio_paths['victory']):
+                self.sound_effects['victory'] = pygame.mixer.Sound(self.audio_paths['victory'])
+            else:
+                print(f"Warning: Could not find victory sound at {self.audio_paths['victory']}")
+                
         except pygame.error as e:
             print(f"Error loading sound: {e}")
             self.dying_sound_length = 90  # Default length in frames
@@ -144,6 +151,7 @@ class PacmanGame:
         self.state.set_fruit_eaten_callback(self._on_fruit_eaten)
         self.state.set_ghost_eaten_callback(self._on_ghost_eaten)
         self.state.set_score_update_callback(self._on_score_updated)
+        self.state.set_victory_callback(self._on_victory)
         # Set high score
         self.state.high_score = self.high_score
         # Reset high score flag
@@ -176,7 +184,7 @@ class PacmanGame:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F3:
                         self.state.debug_mode = not self.state.debug_mode
-                    elif event.key == pygame.K_r and self.state.game_over and not self.state.dying:
+                    elif event.key == pygame.K_r and (self.state.game_over or self.state.victory) and not self.state.dying:
                         self._restart_game()
                     elif not self.state.game_over and not self.state.dying:
                         self.player.handle_key_input(event.key)
@@ -252,6 +260,15 @@ class PacmanGame:
                 sound_length = int(self.sound_effects['high_score'].get_length() * 1000)  # Convert to ms
                 pygame.time.set_timer(pygame.USEREVENT, sound_length)
         
+    def _on_victory(self):
+        """Callback for when player achieves victory."""
+        # Stop the eating sound
+        pygame.mixer.music.stop()
+        
+        # Play victory sound if available
+        if 'victory' in self.sound_effects:
+            self.sound_effects['victory'].play()
+    
     def _restart_game(self) -> None:
         """Restart the game after game over."""
         # Reset to startup state
@@ -338,7 +355,12 @@ class PacmanGame:
                 self.state.dying,
                 self.state.death_timer,
                 self.state.death_animation_length,
-                high_score=self.high_score
+                high_score=self.high_score,
+                victory=self.state.victory,
+                victory_timer=self.state.victory_timer,
+                victory_animation_length=self.state.victory_animation_length,
+                collectibles_remaining=self.state.collectibles_remaining,
+                total_collectibles=self.state.total_collectibles
             )
     
     def _draw_startup_screen(self) -> None:

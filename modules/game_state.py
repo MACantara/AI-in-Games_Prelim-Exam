@@ -34,6 +34,12 @@ class GameState:
     high_score: int = 0  # Store high score
     prev_score: int = 0  # Used to detect score changes
     score_update_callback: Optional[Callable[[int], None]] = field(default=None, repr=False)
+    victory: bool = False  # Flag for victory state
+    victory_timer: int = 0  # Timer for victory animation
+    victory_animation_length: int = 180  # Length of victory animation (6 seconds at 30fps)
+    victory_callback: Optional[Callable] = field(default=None, repr=False)
+    total_collectibles: int = 0  # Total number of dots and power pellets
+    collectibles_remaining: int = 0  # Remaining dots and power pellets
     
     def __post_init__(self):
         if self.ghost_release_times is None:
@@ -66,12 +72,21 @@ class GameState:
             Ghost(ghost_positions[3], 'clyde'),
         ]
         
+        # Count total collectibles (dots and power pellets)
+        total_collectibles = 0
+        for row in grid:
+            for cell in row:
+                if cell == 2 or cell == 3:  # Dot or power pellet
+                    total_collectibles += 1
+        
         return cls(
             grid=grid,
             player_pos=player_pos,
             player_direction=player_direction,
             ghosts=ghosts,
-            player_spawn_pos=player_spawn
+            player_spawn_pos=player_spawn,
+            total_collectibles=total_collectibles,
+            collectibles_remaining=total_collectibles
         )
     
     def update(self) -> None:
@@ -164,6 +179,21 @@ class GameState:
                 
         # Check for collision with ghosts
         self._check_ghost_collisions()
+        
+        # Check if victory conditions are met (all collectibles collected)
+        if not self.victory and not self.dying and not self.game_over:
+            self._check_victory_condition()
+            
+        # Handle victory animation
+        if self.victory:
+            self.victory_timer += 1
+            # Freeze ghosts during victory
+            for ghost in self.ghosts:
+                ghost.active = False
+            # End the victory animation after time is up
+            if self.victory_timer >= self.victory_animation_length:
+                self.game_over = True  # End the game after victory
+            return
     
     def _check_ghost_collisions(self) -> None:
         """Check if player has collided with any ghost."""
@@ -201,6 +231,10 @@ class GameState:
     def set_score_update_callback(self, callback: Callable[[int], None]) -> None:
         """Set callback function to be called when score changes."""
         self.score_update_callback = callback
+    
+    def set_victory_callback(self, callback: Callable) -> None:
+        """Set callback function to be called when player achieves victory."""
+        self.victory_callback = callback
     
     def _handle_ghost_collision(self) -> None:
         """Handle what happens when player collides with ghost."""
@@ -279,3 +313,22 @@ class GameState:
             
         # Reset timers
         self.game_timer = 0
+    
+    def _check_victory_condition(self) -> None:
+        """Check if all dots and power pellets have been collected."""
+        # Count remaining collectibles
+        remaining = 0
+        for row in self.grid:
+            for cell in row:
+                if cell == 2 or cell == 3:  # Dot or power pellet
+                    remaining += 1
+        
+        self.collectibles_remaining = remaining
+        
+        # If no collectibles remain, trigger victory
+        if remaining == 0:
+            self.victory = True
+            self.victory_timer = 0
+            # Call victory callback if set
+            if self.victory_callback:
+                self.victory_callback()
