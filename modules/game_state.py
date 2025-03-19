@@ -179,7 +179,7 @@ class GameState:
         self.score += points
         self.ghost_points_multiplier *= 2
         
-        # Mark ghost as eaten
+        # Mark ghost as eaten - the movement back to spawn will be handled in update_all_ghosts
         ghost.get_eaten()
         
         # Call callback if set

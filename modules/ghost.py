@@ -283,13 +283,6 @@ class Ghost(PathAgent):
         self.path_index = 0  # Reset path index
         self.moving = True   # Make sure it's moving
         
-        # Create direct path back to spawn
-        path = astar_path(None, self.pos, self.start_pos)
-        if path and len(path) > 1:
-            self.path = path
-        else:
-            # Fallback if path finding fails
-            self.path = [self.pos, self.start_pos]
         
         # Start respawn timer
         self.respawn_timer = self.respawn_delay
@@ -318,6 +311,8 @@ class Ghost(PathAgent):
                 self.active = True  # Reactivate the ghost
                 self.vulnerable = False  # Ensure ghost is not vulnerable
                 self.vulnerable_flash = False  # Reset flash state
+                self.path = []  # Clear path to start fresh
+                self.path_index = 0
                 # If power mode is still active, make the ghost vulnerable again
                 if power_active:
                     self.make_vulnerable()
@@ -331,9 +326,18 @@ class Ghost(PathAgent):
             if not ghost.active:
                 continue
                 
-            # Skip eaten ghosts - they should follow their return path
+            # Handle eaten ghosts differently - send them back to spawn via regular pathfinding
             if ghost.eaten:
-                # Just move along the existing path to spawn
+                # Only calculate a new path if we don't have one or have reached the end
+                if not ghost.path or ghost.path_index >= len(ghost.path) - 1:
+                    # Find a path back to spawn using regular A* pathfinding
+                    new_path = astar_path(grid, ghost.pos, ghost.start_pos)
+                    if new_path and len(new_path) > 1:
+                        ghost.path = new_path
+                        ghost.path_index = 0
+                        ghost.moving = True
+                
+                # Move along the path to spawn
                 ghost.move_step()
                 continue
                 
