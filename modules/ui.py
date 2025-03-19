@@ -18,15 +18,20 @@ class UI:
         self.screen.fill((0, 0, 0))  # Clear screen
         self._draw_grid(grid)
         
-        # Draw ghosts below player if player is dying
+        # Draw ghosts
+        for ghost in ghosts:
+            ghost.draw(self.screen, self.cell_size)
+        
+        # Only draw the player if:
+        # 1. The game is not over, or
+        # 2. The player is in the death animation
         if dying:
-            for ghost in ghosts:
-                ghost.draw(self.screen, self.cell_size)
-            # Calculate death animation progress (0 to 1)
+            # Death animation - always show this even if game over
             death_progress = death_timer / death_animation_length
             player.draw(self.screen, self.cell_size, dying=True, death_progress=death_progress)
-        else:
-            self._draw_entities(player, ghosts)
+        elif not game_over:
+            # Normal gameplay - only show player if game is not over
+            player.draw(self.screen, self.cell_size)
             
         self._draw_score(player.score)
         self._draw_lives(lives)

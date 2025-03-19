@@ -85,6 +85,8 @@ class Player:
     def _move_and_collect_dot(self, new_pos: List[int], grid: List[List[int]]) -> None:
         """Move to the new position and collect a dot if present."""
         row, col = new_pos
+        
+        # Only collect dots if player is alive
         if grid[row][col] == 2:  # If it's a dot
             grid[row][col] = 0  # Remove the dot
             self.score += self.dot_points  # Increase score

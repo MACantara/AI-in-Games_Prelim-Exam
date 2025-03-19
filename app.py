@@ -141,12 +141,13 @@ class PacmanGame:
                 self._init_game()
             return
         
-        # Update player position and collect dots
-        self.player.update_position(self.state.grid, self.state.dying)
-        
-        # Update game state with current player position and direction
-        self.state.player_pos = self.player.pos
-        self.state.player_direction = self.player.direction
+        # Update player position and collect dots - but not if game is over
+        if not self.state.game_over:
+            self.player.update_position(self.state.grid, self.state.dying)
+            
+            # Update game state with current player position and direction
+            self.state.player_pos = self.player.pos
+            self.state.player_direction = self.player.direction
         
         # Update ghost positions
         self.ghost_move_delay = (self.ghost_move_delay + 1) % 6
