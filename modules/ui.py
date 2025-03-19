@@ -32,7 +32,7 @@ class UI:
             player.draw(self.screen, self.cell_size, dying=True, death_progress=death_progress)
         elif victory:
             # Victory animation - draw player with different visualization
-            victory_progress = victory_timer / victory_animation_length
+            victory_progress = min(1.0, victory_timer / victory_animation_length)
             self._draw_victory_player(player, victory_progress)
         elif not game_over:
             # Normal gameplay
@@ -47,7 +47,9 @@ class UI:
             self._draw_collectibles_info(collectibles_remaining, total_collectibles)
         
         # Show specific overlays based on game state
-        if victory and victory_timer < victory_animation_length:
+        if victory:
+            # Always show victory screen if in victory state, animation capped at 100%
+            victory_progress = min(1.0, victory_timer / victory_animation_length)
             self._draw_victory_screen(victory_progress)
         elif game_over and not dying:
             self._draw_game_over()

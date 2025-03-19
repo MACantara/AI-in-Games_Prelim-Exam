@@ -115,8 +115,15 @@ class GameState:
                         self.respawn_callback()
             return
             
-        # Skip other updates if game over
-        if self.game_over:
+        # Skip other updates if game over or in victory state
+        if self.game_over or self.victory:
+            # Handle victory animation
+            if self.victory:
+                self.victory_timer += 1
+                # Freeze ghosts during victory
+                for ghost in self.ghosts:
+                    ghost.active = False
+                # Note: We're removing the game_over flag setting to maintain victory state
             return
         
         self.game_timer += 1
@@ -181,7 +188,7 @@ class GameState:
         self._check_ghost_collisions()
         
         # Check if victory conditions are met (all collectibles collected)
-        if not self.victory and not self.dying and not self.game_over:
+        if not self.victory and not self.dying:
             self._check_victory_condition()
             
         # Handle victory animation
