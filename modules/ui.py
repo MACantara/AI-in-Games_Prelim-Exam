@@ -14,7 +14,7 @@ class UI:
     
     def render_game(self, grid: List[List[int]], player, ghosts: List, debug_mode: bool = False, 
                     game_over: bool = False, lives: int = 3, dying: bool = False, death_timer: int = 0,
-                    death_animation_length: int = 90) -> None:
+                    death_animation_length: int = 90, high_score: int = 0) -> None:
         """Main rendering method that draws everything in the game."""
         self.screen.fill((0, 0, 0))  # Clear screen
         self._draw_grid(grid)
@@ -34,7 +34,7 @@ class UI:
             # Normal gameplay - only show player if game is not over
             player.draw(self.screen, self.cell_size)
             
-        self._draw_score(player.score)
+        self._draw_score(player.score, high_score)
         self._draw_lives(lives)
         
         if debug_mode:
@@ -81,11 +81,20 @@ class UI:
         for ghost in ghosts:
             ghost.draw(self.screen, self.cell_size)
     
-    def _draw_score(self, score: int) -> None:
-        """Display the current score on screen."""
+    def _draw_score(self, score: int, high_score: int) -> None:
+        """Display the current score and high score on screen."""
         font = pygame.font.Font(None, 36)
         score_text = font.render(f"Score: {score}", True, (255, 255, 255))
         self.screen.blit(score_text, (10, 10))
+        
+        # Display high score
+        high_score_text = font.render(f"High: {high_score}", True, (255, 255, 0))
+        self.screen.blit(high_score_text, (10, 50))
+        
+        # If current score is higher than high score, show a NEW! indicator
+        if score > high_score:
+            new_text = font.render("NEW!", True, (255, 0, 0))
+            self.screen.blit(new_text, (150, 50))
     
     def _draw_lives(self, lives: int) -> None:
         """Display the number of remaining lives."""

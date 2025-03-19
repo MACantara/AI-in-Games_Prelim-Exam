@@ -25,6 +25,10 @@ class PacmanGame:
         self.player = None
         self.ui = UI(self.screen, self.cell_size)
         
+        # High score handling
+        self.high_score = self._load_high_score()
+        self.high_score_beaten = False
+        
         # Audio setup
         self.audio_paths = {
             'startup': os.path.join(os.path.dirname(__file__), "static/audio/start-up.mp3"),
@@ -32,13 +36,34 @@ class PacmanGame:
             'dying': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-dying.mp3"),
             'fruit': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-eatting-fruit.mp3"),
             'ghost_scared': os.path.join(os.path.dirname(__file__), "static/audio/ghost-scared.mp3"),
-            'ghost_eaten': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-eatting-ghost.mp3")
+            'ghost_eaten': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-eatting-ghost.mp3"),
+            'high_score': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-got-high-score.mp3")
         }
         self.sound_effects = {}
         self._load_sound_effects()
         
         # Play startup music
         self._play_startup_music()
+    
+    def _load_high_score(self) -> int:
+        """Load high score from file or return 0 if file doesn't exist."""
+        try:
+            high_score_path = os.path.join(os.path.dirname(__file__), "high_score.txt")
+            if os.path.exists(high_score_path):
+                with open(high_score_path, 'r') as f:
+                    return int(f.read().strip())
+        except (IOError, ValueError):
+            pass  # If any error happens, return default
+        return 0
+    
+    def _save_high_score(self, score: int) -> None:
+        """Save high score to file."""
+        try:
+            high_score_path = os.path.join(os.path.dirname(__file__), "high_score.txt")
+            with open(high_score_path, 'w') as f:
+                f.write(str(score))
+        except IOError:
+            print("Warning: Could not save high score")
     
     def _play_startup_music(self):
         """Play the startup music and prepare for game start."""
@@ -94,6 +119,12 @@ class PacmanGame:
             else:
                 print(f"Warning: Could not find ghost eaten sound at {self.audio_paths['ghost_eaten']}")
                 
+            # Load high score sound
+            if os.path.exists(self.audio_paths['high_score']):
+                self.sound_effects['high_score'] = pygame.mixer.Sound(self.audio_paths['high_score'])
+            else:
+                print(f"Warning: Could not find high score sound at {self.audio_paths['high_score']}")
+                
         except pygame.error as e:
             print(f"Error loading sound: {e}")
             self.dying_sound_length = 90  # Default length in frames
@@ -107,10 +138,17 @@ class PacmanGame:
         self.state.death_animation_length = self.dying_sound_length
         # Set power duration based on ghost scared sound length
         self.state.power_duration = self.power_duration
+        # Set callbacks
         self.state.set_death_callback(self._on_player_death)
         self.state.set_respawn_callback(self._on_player_respawn)
         self.state.set_fruit_eaten_callback(self._on_fruit_eaten)
         self.state.set_ghost_eaten_callback(self._on_ghost_eaten)
+        self.state.set_score_update_callback(self._on_score_updated)
+        # Set high score
+        self.state.high_score = self.high_score
+        # Reset high score flag
+        self.high_score_beaten = False
+        
         self.player = Player(self.state.player_pos)
         self.ghost_move_delay = 0
         # Start the eating sound loop when the game begins
@@ -121,6 +159,11 @@ class PacmanGame:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
+            
+            if event.type == pygame.USEREVENT:
+                # Resume music after high score sound finishes
+                pygame.time.set_timer(pygame.USEREVENT, 0)  # Cancel the timer
+                pygame.mixer.music.unpause()
             
             if self.in_startup:
                 # Only check if music has ended, ignore key presses during startup
@@ -181,6 +224,33 @@ class PacmanGame:
         # Play ghost eaten sound
         if 'ghost_eaten' in self.sound_effects:
             self.sound_effects['ghost_eaten'].play()
+    
+    def _on_score_updated(self, new_score: int) -> None:
+        """Called whenever the player's score is updated."""
+        # Check if player has beaten the high score
+        if not self.high_score_beaten and new_score > self.high_score:
+            self.high_score_beaten = True
+            self.high_score = new_score
+            self._save_high_score(new_score)
+            # Play high score sound
+            self._play_high_score_sound()
+    
+    def _play_high_score_sound(self) -> None:
+        """Play the high score sound."""
+        if 'high_score' in self.sound_effects:
+            # Stop current music temporarily
+            current_music_pos = 0
+            if pygame.mixer.music.get_busy():
+                current_music_pos = pygame.mixer.music.get_pos()
+                pygame.mixer.music.pause()
+            
+            # Play the high score sound
+            self.sound_effects['high_score'].play()
+            
+            # Resume music after a delay (high score sound length)
+            if 'high_score' in self.sound_effects:
+                sound_length = int(self.sound_effects['high_score'].get_length() * 1000)  # Convert to ms
+                pygame.time.set_timer(pygame.USEREVENT, sound_length)
         
     def _restart_game(self) -> None:
         """Restart the game after game over."""
@@ -240,6 +310,10 @@ class PacmanGame:
                 self.state.player_direction
             )
         
+        # Update player score in state
+        if not self.state.game_over and self.player:
+            self.state.score = self.player.score
+        
         self.state.update()
         
         # Check if power mode just ended (to restart normal eating sound)
@@ -263,7 +337,8 @@ class PacmanGame:
                 self.state.lives,
                 self.state.dying,
                 self.state.death_timer,
-                self.state.death_animation_length
+                self.state.death_animation_length,
+                high_score=self.high_score
             )
     
     def _draw_startup_screen(self) -> None:

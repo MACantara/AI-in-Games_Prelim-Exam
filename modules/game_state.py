@@ -31,6 +31,9 @@ class GameState:
     fruit_eaten_callback: Optional[Callable] = field(default=None, repr=False)
     ghost_eaten_callback: Optional[Callable] = field(default=None, repr=False)
     power_just_ended: bool = False  # Add this flag to track when power mode just ended
+    high_score: int = 0  # Store high score
+    prev_score: int = 0  # Used to detect score changes
+    score_update_callback: Optional[Callable[[int], None]] = field(default=None, repr=False)
     
     def __post_init__(self):
         if self.ghost_release_times is None:
@@ -75,6 +78,12 @@ class GameState:
         """Update game state for one frame."""
         # Reset the power_just_ended flag at the start of each frame
         self.power_just_ended = False
+        
+        # Check if score changed
+        if self.score != self.prev_score:
+            if self.score_update_callback:
+                self.score_update_callback(self.score)
+            self.prev_score = self.score
         
         # Handle death animation even in game over state
         if self.dying:
@@ -188,6 +197,10 @@ class GameState:
     def set_ghost_eaten_callback(self, callback: Callable) -> None:
         """Set callback function to be called when player eats a ghost."""
         self.ghost_eaten_callback = callback
+    
+    def set_score_update_callback(self, callback: Callable[[int], None]) -> None:
+        """Set callback function to be called when score changes."""
+        self.score_update_callback = callback
     
     def _handle_ghost_collision(self) -> None:
         """Handle what happens when player collides with ghost."""
