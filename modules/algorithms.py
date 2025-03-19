@@ -43,14 +43,28 @@ def find_flee_target(ghost_pos: Position, player_pos: Position) -> Position:
         dx = random.choice([-1, 1])
         dy = random.choice([-1, 1])
     
+    # Normalize and randomize direction slightly to avoid corners and predictable movement
+    magnitude = max(1, abs(dx) + abs(dy))
+    dx = dx / magnitude
+    dy = dy / magnitude
+    
+    # Add some randomization to avoid predictable patterns and corner traps
+    dx += random.uniform(-0.5, 0.5)
+    dy += random.uniform(-0.5, 0.5)
+    
+    # Re-normalize
+    magnitude = max(1, abs(dx) + abs(dy))
+    dx = dx / magnitude
+    dy = dy / magnitude
+    
     # Scale the vector to get a point further away
-    scale = 8.0  # Try to run 8 cells away
+    scale = 8.0 + random.uniform(0, 4)  # Variable distance (8-12 cells)
     target_x = ghost_pos[0] + int(dx * scale)
     target_y = ghost_pos[1] + int(dy * scale)
     
     # Add some randomness to prevent ghosts from clustering
-    target_x += random.randint(-2, 2)
-    target_y += random.randint(-2, 2)
+    target_x += random.randint(-3, 3)
+    target_y += random.randint(-3, 3)
     
     return (target_x, target_y)
 
@@ -85,14 +99,16 @@ def astar_path(grid: Grid, start: Position, goal: Position, flee_mode: bool = Fa
         iterations += 1
         _, current = heapq.heappop(open_set)
         
-        if current == goal:
+        # In flee mode, we might want to stop earlier sometimes
+        if current == goal or (flee_mode and iterations > max_iterations // 2 and random.random() < 0.1):
             path = reconstruct_path(came_from, current)
             
             # In flee mode, sometimes randomize the path to create less predictable movement
-            if flee_mode and len(path) > 3 and random.random() < 0.3:
-                # Take a random turn sometimes
-                turn_point = random.randint(1, min(5, len(path)-1))
-                return path[:turn_point]
+            if flee_mode and len(path) > 3:
+                # Add some unpredictability: occasional random turns or shorter paths
+                if random.random() < 0.4:  # 40% chance
+                    turn_point = random.randint(1, min(5, len(path)-1))
+                    return path[:turn_point]
                 
             return path
             

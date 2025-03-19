@@ -409,15 +409,27 @@ class Ghost(PathAgent):
                 ghost.move_step()
                 continue
             
+            # When vulnerable, check proximity to player to trigger more frequent path updates
+            recalculate_now = False
+            if ghost.vulnerable:
+                # Calculate distance to player
+                distance_to_player = abs(ghost.pos[0] - player_pos[0]) + abs(ghost.pos[1] - player_pos[1])
+                # Force path recalculation if player gets too close (5 tiles)
+                if distance_to_player <= 5:
+                    recalculate_now = True
+                # Also recalculate if ghost has reached the end of its path or nearly there
+                elif not ghost.path or ghost.path_index >= len(ghost.path) - 2:
+                    recalculate_now = True
+            
             # Increment path recalculation timer
             ghost.path_recalculation_timer += 1
             
-            # Only recalculate path periodically to prevent back-and-forth behavior
-            if ghost.path_recalculation_timer >= ghost.path_recalculation_delay or not ghost.path or ghost.path_index >= len(ghost.path) - 1:
+            # Recalculate path if timer expired or we need to recalculate now
+            if recalculate_now or ghost.path_recalculation_timer >= ghost.path_recalculation_delay or not ghost.path or ghost.path_index >= len(ghost.path) - 1:
                 # Reset timer
                 ghost.path_recalculation_timer = 0
                 
-                # Always get new target and calculate new path
+                # Get new target based on ghost state (vulnerable/normal)
                 blinky_pos = ghosts[0].pos if ghost.ghost_type != 'blinky' else None
                 target = ghost.get_chase_target(
                     player_pos,
@@ -441,8 +453,31 @@ class Ghost(PathAgent):
                             break
                 
                 # Calculate new path to the adjusted target
-                flee_mode = ghost.vulnerable  # Pass true if ghost is vulnerable
+                flee_mode = ghost.vulnerable
                 path = astar_path(grid, ghost.pos, adjusted_target, flee_mode=flee_mode)
+                
+                # If vulnerable and path is too short, try to find a better path
+                if ghost.vulnerable and (not path or len(path) < 3):
+                    # Try multiple flee targets until we find one with a reasonable path
+                    for _ in range(3):  # Try up to 3 times
+                        new_target = find_flee_target(ghost.pos, player_pos) # Get a new random flee target
+                        target_row = max(0, min(new_target[0], len(grid) - 1))
+                        target_col = max(0, min(new_target[1], len(grid[0]) - 1))
+                        adjusted_target = (target_row, target_col)
+                        
+                        # Avoid walls
+                        if grid[target_row][target_col] == 1:
+                            for dr, dc in [(0,1), (1,0), (0,-1), (-1,0)]:
+                                nr, nc = target_row + dr, target_col + dc
+                                if (0 <= nr < len(grid) and 0 <= nc < len(grid[0]) and 
+                                        grid[nr][nc] != 1):
+                                    adjusted_target = (nr, nc)
+                                    break
+                        
+                        new_path = astar_path(grid, ghost.pos, adjusted_target, flee_mode=True)
+                        if new_path and len(new_path) >= 3:
+                            path = new_path
+                            break
                 
                 # Don't update path if the resulting path is empty or just the current position
                 if path and len(path) > 1:
