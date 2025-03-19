@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import List, Tuple, Optional
+from dataclasses import dataclass, field
+from typing import List, Tuple, Optional, Callable
 from .ghost import Ghost
 from .grid import create_grid
 
@@ -20,6 +20,7 @@ class GameState:
     dying: bool = False  # Flag for death animation
     death_timer: int = 0  # Timer for death animation
     death_animation_length: int = 90  # Length of death animation in frames (3 seconds at 30fps)
+    death_callback: Optional[Callable] = field(default=None, repr=False)
     
     def __post_init__(self):
         if self.ghost_release_times is None:
@@ -85,9 +86,18 @@ class GameState:
                 self._handle_ghost_collision()
                 break
     
+    def set_death_callback(self, callback: Callable) -> None:
+        """Set callback function to be called when player dies."""
+        self.death_callback = callback
+    
     def _handle_ghost_collision(self) -> None:
         """Handle what happens when player collides with ghost."""
         self.lives -= 1
+        
+        # Call death callback if set
+        if self.death_callback:
+            self.death_callback()
+            
         if self.lives <= 0:
             self.game_over = True
         else:

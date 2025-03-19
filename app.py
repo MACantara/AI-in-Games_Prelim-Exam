@@ -28,8 +28,11 @@ class PacmanGame:
         # Audio setup
         self.audio_paths = {
             'startup': os.path.join(os.path.dirname(__file__), "static/audio/start-up.mp3"),
-            'eating': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-eatting.mp3")
+            'eating': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-eatting.mp3"),
+            'dying': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-dying.mp3")
         }
+        self.sound_effects = {}
+        self._load_sound_effects()
         
         # Play startup music
         self._play_startup_music()
@@ -52,9 +55,20 @@ class PacmanGame:
         else:
             print(f"Warning: Could not find eating sound at {self.audio_paths['eating']}")
     
+    def _load_sound_effects(self):
+        """Load sound effects that aren't played as music."""
+        try:
+            if os.path.exists(self.audio_paths['dying']):
+                self.sound_effects['dying'] = pygame.mixer.Sound(self.audio_paths['dying'])
+            else:
+                print(f"Warning: Could not find dying sound at {self.audio_paths['dying']}")
+        except pygame.error as e:
+            print(f"Error loading sound: {e}")
+    
     def _init_game(self):
         """Initialize the game state and player."""
         self.state = GameState.create_new_game()
+        self.state.set_death_callback(self._on_player_death)
         self.player = Player(self.state.player_pos)
         self.ghost_move_delay = 0
         # Start the eating sound loop when the game begins
@@ -83,9 +97,19 @@ class PacmanGame:
                         self.player.handle_key_input(event.key)
         return True
     
+    def _on_player_death(self):
+        """Callback for when player dies - play death sound."""
+        # Stop the eating sound
+        pygame.mixer.music.stop()
+        
+        # Play death sound if available
+        if 'dying' in self.sound_effects:
+            self.sound_effects['dying'].play()
+            
     def _restart_game(self) -> None:
         """Restart the game after game over."""
         self.state = GameState.create_new_game()
+        self.state.set_death_callback(self._on_player_death)
         self.player = Player(self.state.player_pos)
         self.ghost_move_delay = 0
         # Make sure eating sound is playing on restart
