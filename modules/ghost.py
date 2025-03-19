@@ -40,7 +40,6 @@ class Ghost(PathAgent):
         self.wave_animation_counter = 0
         # Vulnerable state for power mode
         self.vulnerable = False
-        self.vulnerable_timer = 0
         self.vulnerable_flash = False  # For blinking effect when vulnerability ends
         self.vulnerable_just_ended = False  # Flag to indicate vulnerability just ended
         self.eaten = False  # Whether the ghost has been eaten and is returning to spawn
@@ -111,7 +110,7 @@ class Ghost(PathAgent):
         # Determine ghost color based on state
         ghost_color = self.color
         if self.vulnerable:
-            if self.vulnerable_flash and int(self.vulnerable_timer / 5) % 2 == 0:
+            if self.vulnerable_flash and int(pygame.time.get_ticks() / 250) % 2 == 0:  # Flash every ~250ms
                 ghost_color = (255, 255, 255)  # White for flashing
             else:
                 ghost_color = (0, 0, 255)  # Blue for vulnerable
@@ -274,11 +273,10 @@ class Ghost(PathAgent):
     def make_vulnerable(self, duration: int = 300) -> None:
         """Make the ghost vulnerable for the specified duration."""
         self.vulnerable = True
-        self.vulnerable_timer = duration
-        # Don't reset eaten state - allow a ghost to be both eaten and vulnerable
-        # self.eaten = False  <- Remove this line
+        # Don't track individual timer anymore, just store if flashing
         self.vulnerable_flash = False
-    
+        self.vulnerable_just_ended = False
+
     def get_eaten(self) -> None:
         """Mark the ghost as eaten and set it to return to spawn."""
         self.eaten = True
@@ -291,23 +289,21 @@ class Ghost(PathAgent):
         # Start respawn timer
         self.respawn_timer = self.respawn_delay
 
-    def update(self, power_active: bool) -> None:
+    def update(self, power_active: bool, should_flash: bool = False) -> None:
         """Update ghost state."""
         # Reset the transition flag at the start of each update
         self.vulnerable_just_ended = False
         
-        if self.vulnerable:
-            self.vulnerable_timer -= 1
-            # Start flashing when almost done
-            # Increase warning period to 4 seconds (120 frames) to match longer power duration
-            if self.vulnerable_timer <= 120:  # Last 4 seconds (at 30fps)
-                self.vulnerable_flash = True
-            # End vulnerability
-            if self.vulnerable_timer <= 0:
-                # Set flag to indicate vulnerability just ended
-                self.vulnerable_just_ended = True
-                self.vulnerable = False
-                self.vulnerable_flash = False
+        # Update vulnerability based on global power state
+        if not power_active and self.vulnerable:
+            # Power just ended, ghost is no longer vulnerable
+            self.vulnerable_just_ended = True
+            self.vulnerable = False
+            self.vulnerable_flash = False
+        elif power_active:
+            # Power still active, update flash state based on passed parameter
+            self.vulnerable = True
+            self.vulnerable_flash = should_flash
         
         # If eaten and reached spawn, wait before becoming active again
         if self.eaten and self.pos == self.start_pos:

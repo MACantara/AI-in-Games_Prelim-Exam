@@ -98,17 +98,19 @@ class GameState:
         self.game_timer += 1
         self.scatter_timer = (self.scatter_timer + 1) % 400
         
-        # Update power mode timer
+        # Update power mode timer and ghost vulnerability
+        should_flash = False
         if self.power_active:
             self.power_timer -= 1
+            
+            # Determine if ghosts should be flashing (last 4 seconds)
+            if self.power_timer <= 120:  # Last 4 seconds (at 30fps)
+                should_flash = True
+                
             if self.power_timer <= 0:
                 self.power_active = False
                 self.power_just_ended = True  # Set flag when power mode just ended
                 self.ghost_points_multiplier = 1
-                # Reset ghost vulnerability
-                for ghost in self.ghosts:
-                    ghost.vulnerable = False
-                    ghost.vulnerable_flash = False
         
         # Instead, just check for vulnerability ending
         for ghost in self.ghosts:
@@ -119,7 +121,11 @@ class GameState:
         # Update active ghost movement and behavior
         for ghost in self.ghosts:
             if ghost.active and not ghost.eaten:
-                ghost.update(self.power_active)
+                ghost.update(self.power_active, should_flash)
+            elif not ghost.active and self.power_active:
+                # Even inactive ghosts need to know if they're vulnerable
+                ghost.vulnerable = True
+                ghost.vulnerable_flash = should_flash
         
         # Update ghost states
         scatter_mode = self.scatter_timer >= 200
@@ -131,7 +137,7 @@ class GameState:
         for ghost in self.ghosts:
             if ghost.active:  # Remove the condition checking if not eaten
                 # Update the ghost state, and get a bool indicating if it just respawned
-                just_respawned = ghost.update(self.power_active)
+                just_respawned = ghost.update(self.power_active, should_flash)
                 
                 # Check if any ghost's vulnerability just ended
                 if ghost.vulnerable_just_ended:
