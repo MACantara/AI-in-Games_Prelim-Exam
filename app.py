@@ -60,14 +60,20 @@ class PacmanGame:
         try:
             if os.path.exists(self.audio_paths['dying']):
                 self.sound_effects['dying'] = pygame.mixer.Sound(self.audio_paths['dying'])
+                # Get the length of the death sound to sync with animation
+                self.dying_sound_length = int(self.sound_effects['dying'].get_length() * 30)  # Convert seconds to frames at 30fps
             else:
                 print(f"Warning: Could not find dying sound at {self.audio_paths['dying']}")
+                self.dying_sound_length = 90  # Default length in frames
         except pygame.error as e:
             print(f"Error loading sound: {e}")
+            self.dying_sound_length = 90  # Default length in frames
     
     def _init_game(self):
         """Initialize the game state and player."""
         self.state = GameState.create_new_game()
+        # Set the death animation length based on the sound effect length
+        self.state.death_animation_length = self.dying_sound_length
         self.state.set_death_callback(self._on_player_death)
         self.player = Player(self.state.player_pos)
         self.ghost_move_delay = 0
@@ -109,6 +115,8 @@ class PacmanGame:
     def _restart_game(self) -> None:
         """Restart the game after game over."""
         self.state = GameState.create_new_game()
+        # Set the death animation length based on the sound effect length
+        self.state.death_animation_length = self.dying_sound_length 
         self.state.set_death_callback(self._on_player_death)
         self.player = Player(self.state.player_pos)
         self.ghost_move_delay = 0
