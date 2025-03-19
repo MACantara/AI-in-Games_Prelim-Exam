@@ -25,21 +25,40 @@ class PacmanGame:
         self.player = None
         self.ui = UI(self.screen, self.cell_size)
         
-        # Load and play startup music
-        self.startup_music_path = os.path.join(os.path.dirname(__file__), "static/audio/start-up.mp3")
-        if os.path.exists(self.startup_music_path):
-            pygame.mixer.music.load(self.startup_music_path)
+        # Audio setup
+        self.audio_paths = {
+            'startup': os.path.join(os.path.dirname(__file__), "static/audio/start-up.mp3"),
+            'eating': os.path.join(os.path.dirname(__file__), "static/audio/pac-man-eatting.mp3")
+        }
+        
+        # Play startup music
+        self._play_startup_music()
+    
+    def _play_startup_music(self):
+        """Play the startup music and prepare for game start."""
+        if os.path.exists(self.audio_paths['startup']):
+            pygame.mixer.music.load(self.audio_paths['startup'])
             pygame.mixer.music.play()
         else:
-            print(f"Warning: Could not find startup music at {self.startup_music_path}")
+            print(f"Warning: Could not find startup music at {self.audio_paths['startup']}")
             self.in_startup = False  # Skip startup if music file doesn't exist
             self._init_game()
+    
+    def _play_eating_sound_loop(self):
+        """Play the eating sound on loop after startup finishes."""
+        if os.path.exists(self.audio_paths['eating']):
+            pygame.mixer.music.load(self.audio_paths['eating'])
+            pygame.mixer.music.play(-1)  # -1 means loop indefinitely
+        else:
+            print(f"Warning: Could not find eating sound at {self.audio_paths['eating']}")
     
     def _init_game(self):
         """Initialize the game state and player."""
         self.state = GameState.create_new_game()
         self.player = Player(self.state.player_pos)
         self.ghost_move_delay = 0
+        # Start the eating sound loop when the game begins
+        self._play_eating_sound_loop()
 
     def handle_input(self) -> bool:
         """Handle user input. Returns False if game should quit."""
@@ -69,6 +88,9 @@ class PacmanGame:
         self.state = GameState.create_new_game()
         self.player = Player(self.state.player_pos)
         self.ghost_move_delay = 0
+        # Make sure eating sound is playing on restart
+        if not pygame.mixer.music.get_busy() or pygame.mixer.music.get_pos() == -1:
+            self._play_eating_sound_loop()
         
     def update(self) -> None:
         """Update game state."""
