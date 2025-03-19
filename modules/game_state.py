@@ -30,6 +30,7 @@ class GameState:
     ghost_points_multiplier: int = 1  # Multiplier increases with each ghost eaten
     fruit_eaten_callback: Optional[Callable] = field(default=None, repr=False)
     ghost_eaten_callback: Optional[Callable] = field(default=None, repr=False)
+    power_just_ended: bool = False  # Add this flag to track when power mode just ended
     
     def __post_init__(self):
         if self.ghost_release_times is None:
@@ -72,6 +73,9 @@ class GameState:
     
     def update(self) -> None:
         """Update game state for one frame."""
+        # Reset the power_just_ended flag at the start of each frame
+        self.power_just_ended = False
+        
         # Handle death animation even in game over state
         if self.dying:
             self.death_timer += 1
@@ -99,6 +103,7 @@ class GameState:
             self.power_timer -= 1
             if self.power_timer <= 0:
                 self.power_active = False
+                self.power_just_ended = True  # Set flag when power mode just ended
                 self.ghost_points_multiplier = 1
                 # Reset ghost vulnerability
                 for ghost in self.ghosts:

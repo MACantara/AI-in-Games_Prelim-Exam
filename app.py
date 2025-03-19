@@ -233,7 +233,10 @@ class PacmanGame:
         self.state.update()
         
         # Check if power mode just ended (to restart normal eating sound)
-        if hasattr(self.state, 'power_active') and not self.state.power_active and not self.state.dying and not pygame.mixer.music.get_busy():
+        if self.state.power_just_ended and not self.state.dying:
+            # Explicitly stop any currently playing music
+            pygame.mixer.music.stop()
+            # Start the normal eating sound
             self._play_eating_sound_loop()
         
     def render(self) -> None:
