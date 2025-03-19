@@ -25,7 +25,7 @@ class GameState:
     respawn_callback: Optional[Callable] = field(default=None, repr=False)
     power_active: bool = False
     power_timer: int = 0
-    power_duration: int = 900  # 30 seconds at 30fps (increased from 300/10 seconds)
+    power_duration: int = 600  # Default: 20 seconds at 30fps, will be overridden
     ghost_points: int = 200  # Base points for eating a ghost
     ghost_points_multiplier: int = 1  # Multiplier increases with each ghost eaten
     fruit_eaten_callback: Optional[Callable] = field(default=None, repr=False)
@@ -126,6 +126,11 @@ class GameState:
             if ghost.active:  # Remove the condition checking if not eaten
                 # Update the ghost state, and get a bool indicating if it just respawned
                 just_respawned = ghost.update(self.power_active)
+                
+                # Check if any ghost's vulnerability just ended
+                if ghost.vulnerable_just_ended:
+                    # Propagate this to the game state's power_just_ended flag
+                    self.power_just_ended = True
                 
                 # If a ghost just respawned, we need to force a path recalculation immediately
                 if just_respawned:

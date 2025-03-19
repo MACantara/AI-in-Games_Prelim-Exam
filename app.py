@@ -79,8 +79,14 @@ class PacmanGame:
             # Load ghost scared (vulnerability) sound
             if os.path.exists(self.audio_paths['ghost_scared']):
                 self.sound_effects['ghost_scared'] = pygame.mixer.Sound(self.audio_paths['ghost_scared'])
+                # Calculate power duration as twice the length of ghost_scared sound (in frames)
+                ghost_scared_length_secs = self.sound_effects['ghost_scared'].get_length()
+                self.ghost_scared_frames = int(ghost_scared_length_secs * 30)  # Convert seconds to frames at 30fps
+                self.power_duration = self.ghost_scared_frames * 2  # Two complete plays
             else:
                 print(f"Warning: Could not find ghost scared sound at {self.audio_paths['ghost_scared']}")
+                self.ghost_scared_frames = 300  # Default fallback (10 seconds at 30fps)
+                self.power_duration = 600  # Default to 20 seconds if sound file missing
                 
             # Load ghost eaten sound
             if os.path.exists(self.audio_paths['ghost_eaten']):
@@ -91,12 +97,16 @@ class PacmanGame:
         except pygame.error as e:
             print(f"Error loading sound: {e}")
             self.dying_sound_length = 90  # Default length in frames
+            self.ghost_scared_frames = 300
+            self.power_duration = 600
     
     def _init_game(self):
         """Initialize the game state and player."""
         self.state = GameState.create_new_game()
         # Set the death animation length based on the sound effect length
         self.state.death_animation_length = self.dying_sound_length
+        # Set power duration based on ghost scared sound length
+        self.state.power_duration = self.power_duration
         self.state.set_death_callback(self._on_player_death)
         self.state.set_respawn_callback(self._on_player_respawn)
         self.state.set_fruit_eaten_callback(self._on_fruit_eaten)

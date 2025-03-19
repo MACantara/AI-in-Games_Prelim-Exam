@@ -42,6 +42,7 @@ class Ghost(PathAgent):
         self.vulnerable = False
         self.vulnerable_timer = 0
         self.vulnerable_flash = False  # For blinking effect when vulnerability ends
+        self.vulnerable_just_ended = False  # Flag to indicate vulnerability just ended
         self.eaten = False  # Whether the ghost has been eaten and is returning to spawn
         self.respawn_timer = 0  # Timer for respawning after being eaten
         self.respawn_delay = 150  # 5 seconds at 30fps
@@ -289,6 +290,9 @@ class Ghost(PathAgent):
 
     def update(self, power_active: bool) -> None:
         """Update ghost state."""
+        # Reset the transition flag at the start of each update
+        self.vulnerable_just_ended = False
+        
         if self.vulnerable:
             self.vulnerable_timer -= 1
             # Start flashing when almost done
@@ -296,6 +300,8 @@ class Ghost(PathAgent):
                 self.vulnerable_flash = True
             # End vulnerability
             if self.vulnerable_timer <= 0:
+                # Set flag to indicate vulnerability just ended
+                self.vulnerable_just_ended = True
                 self.vulnerable = False
                 self.vulnerable_flash = False
         
