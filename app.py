@@ -75,6 +75,7 @@ class PacmanGame:
         # Set the death animation length based on the sound effect length
         self.state.death_animation_length = self.dying_sound_length
         self.state.set_death_callback(self._on_player_death)
+        self.state.set_respawn_callback(self._on_player_respawn)
         self.player = Player(self.state.player_pos)
         self.ghost_move_delay = 0
         # Start the eating sound loop when the game begins
@@ -111,13 +112,18 @@ class PacmanGame:
         # Play death sound if available
         if 'dying' in self.sound_effects:
             self.sound_effects['dying'].play()
-            
+    
+    def _on_player_respawn(self):
+        """Callback for when player respawns after death - restart eating sound."""
+        self._play_eating_sound_loop()
+        
     def _restart_game(self) -> None:
         """Restart the game after game over."""
         self.state = GameState.create_new_game()
         # Set the death animation length based on the sound effect length
         self.state.death_animation_length = self.dying_sound_length 
         self.state.set_death_callback(self._on_player_death)
+        self.state.set_respawn_callback(self._on_player_respawn)
         self.player = Player(self.state.player_pos)
         self.ghost_move_delay = 0
         # Make sure eating sound is playing on restart

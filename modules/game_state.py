@@ -21,6 +21,7 @@ class GameState:
     death_timer: int = 0  # Timer for death animation
     death_animation_length: int = 90  # Length of death animation in frames (3 seconds at 30fps)
     death_callback: Optional[Callable] = field(default=None, repr=False)
+    respawn_callback: Optional[Callable] = field(default=None, repr=False)
     
     def __post_init__(self):
         if self.ghost_release_times is None:
@@ -60,6 +61,9 @@ class GameState:
                 self.dying = False
                 self.death_timer = 0
                 self._reset_positions()
+                # Call respawn callback after reset
+                if self.respawn_callback:
+                    self.respawn_callback()
             return
         
         self.game_timer += 1
@@ -89,6 +93,10 @@ class GameState:
     def set_death_callback(self, callback: Callable) -> None:
         """Set callback function to be called when player dies."""
         self.death_callback = callback
+        
+    def set_respawn_callback(self, callback: Callable) -> None:
+        """Set callback function to be called when player respawns after death."""
+        self.respawn_callback = callback
     
     def _handle_ghost_collision(self) -> None:
         """Handle what happens when player collides with ghost."""
