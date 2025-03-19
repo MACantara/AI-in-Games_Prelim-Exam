@@ -265,6 +265,11 @@ class PacmanGame:
         # Stop the eating sound
         pygame.mixer.music.stop()
         
+        # Save high score immediately if needed
+        if self.state.score > self.high_score:
+            self.high_score = self.state.score
+            self._save_high_score(self.high_score)
+        
         # Play victory sound if available
         if 'victory' in self.sound_effects:
             self.sound_effects['victory'].play()
@@ -295,13 +300,13 @@ class PacmanGame:
                 self._init_game()
             return
         
-        # Update player position and collect dots - but not if game is over
-        if not self.state.game_over:
+        # Update player position and collect dots - but not if game is over or victory state
+        if not self.state.game_over and not self.state.victory:
             # Store position before movement to check if we moved
             old_pos = self.player.pos.copy()
             
-            # Update player position
-            self.player.update_position(self.state.grid, self.state.dying)
+            # Update player position - pass victory state to prevent movement
+            self.player.update_position(self.state.grid, self.state.dying, self.state.victory)
             
             # Update game state with current player position and direction
             self.state.player_pos = self.player.pos
@@ -327,11 +332,22 @@ class PacmanGame:
                 self.state.player_direction
             )
         
-        # Update player score in state
-        if not self.state.game_over and self.player:
+        # Update player score in state and check for high score
+        if self.player:
+            prev_score = self.state.score
             self.state.score = self.player.score
+            
+            # Check if score just exceeded high score
+            if prev_score <= self.high_score and self.state.score > self.high_score:
+                self.high_score = self.state.score
+                self._save_high_score(self.high_score)
         
         self.state.update()
+        
+        # Save high score whenever game is over or victory achieved
+        if (self.state.game_over or self.state.victory) and self.state.score > self.high_score:
+            self.high_score = self.state.score
+            self._save_high_score(self.high_score)
         
         # Check if power mode just ended (to restart normal eating sound)
         if self.state.power_just_ended and not self.state.dying:

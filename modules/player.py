@@ -39,13 +39,13 @@ class Player:
         elif key in (pygame.K_RIGHT, pygame.K_d):
             self.requested_direction = (0, 1)
     
-    def update_position(self, grid: List[List[int]], is_dying: bool = False) -> None:
+    def update_position(self, grid: List[List[int]], is_dying: bool = False, is_victory: bool = False) -> None:
         """Update player position based on current direction."""
         # Update mouth animation every frame for smoother animation
         self._update_animation()
         
-        # Skip movement if player is dying
-        if is_dying:
+        # Skip movement if player is dying or game is in victory state
+        if is_dying or is_victory:
             return
             
         # Control movement speed

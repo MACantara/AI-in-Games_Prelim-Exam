@@ -95,8 +95,12 @@ class UI:
         score_text = font.render(f"Score: {score}", True, (255, 255, 255))
         self.screen.blit(score_text, (10, 10))
         
+        # Update high score display in real time if current score is higher
+        displayed_high = max(score, high_score)
+        high_score_color = (255, 215, 0) if score > high_score else (255, 255, 0)  # Gold color if new high score
+        
         # Display high score
-        high_score_text = font.render(f"High: {high_score}", True, (255, 255, 0))
+        high_score_text = font.render(f"High: {displayed_high}", True, high_score_color)
         self.screen.blit(high_score_text, (10, 50))
         
         # If current score is higher than high score, show a NEW! indicator
