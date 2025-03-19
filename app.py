@@ -121,16 +121,20 @@ class PacmanGame:
         
     def _restart_game(self) -> None:
         """Restart the game after game over."""
-        self.state = GameState.create_new_game()
-        # Set the death animation length based on the sound effect length
-        self.state.death_animation_length = self.dying_sound_length 
-        self.state.set_death_callback(self._on_player_death)
-        self.state.set_respawn_callback(self._on_player_respawn)
-        self.player = Player(self.state.player_pos)
-        self.ghost_move_delay = 0
-        # Make sure eating sound is playing on restart
-        if not pygame.mixer.music.get_busy() or pygame.mixer.music.get_pos() == -1:
-            self._play_eating_sound_loop()
+        # Reset to startup state
+        self.in_startup = True
+        self.state = None
+        self.player = None
+        
+        # Stop any currently playing sounds
+        pygame.mixer.music.stop()
+        pygame.mixer.stop()
+        
+        # Play startup music again
+        self._play_startup_music()
+        
+        # Note: The game will be initialized after startup music finishes in the update method
+        # This ensures the same startup flow as when the game first launches
         
     def update(self) -> None:
         """Update game state."""
