@@ -86,10 +86,13 @@ class Player:
         """Move to the new position and collect a dot if present."""
         row, col = new_pos
         
-        # Only collect dots if player is alive
-        if grid[row][col] == 2:  # If it's a dot
+        # Collect items if player is alive
+        if grid[row][col] == 2:  # Regular dot
             grid[row][col] = 0  # Remove the dot
             self.score += self.dot_points  # Increase score
+        elif grid[row][col] == 3:  # Power pellet/fruit
+            grid[row][col] = 0  # Remove the power pellet
+            self.score += self.power_pellet_points  # Increase score
             
         self.pos = new_pos
     
