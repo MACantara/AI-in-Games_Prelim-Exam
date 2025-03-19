@@ -200,19 +200,21 @@ class PacmanGame:
         
         # Update player position and collect dots - but not if game is over
         if not self.state.game_over:
+            # Store position before movement to check if we moved
             old_pos = self.player.pos.copy()
+            
+            # Update player position
             self.player.update_position(self.state.grid, self.state.dying)
             
             # Update game state with current player position and direction
             self.state.player_pos = self.player.pos
             self.state.player_direction = self.player.direction
             
-            # Check if player ate a fruit/power pellet
-            if tuple(old_pos) != tuple(self.player.pos):
+            # Check if player ate a power pellet
+            if old_pos != self.player.pos:  # Only check if player actually moved
                 row, col = self.player.pos
-                if self.state.grid[row][col] == 3:  # Power pellet/fruit
-                    self.state.grid[row][col] = 0  # Remove it
-                    self.state.score += self.player.power_pellet_points
+                if old_pos != self.player.pos and self.player.just_ate_power_pellet:
+                    self.player.just_ate_power_pellet = False
                     self.state._activate_power_mode()
                     # Call fruit eaten callback
                     if self.state.fruit_eaten_callback:

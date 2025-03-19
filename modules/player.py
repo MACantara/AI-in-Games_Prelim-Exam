@@ -15,6 +15,7 @@ class Player:
         self.score = 0
         self.dot_points = 10
         self.power_pellet_points = 50
+        self.just_ate_power_pellet = False  # Add this flag
         
         # Simplified animation properties - just alternating between open and closed
         self.mouth_open = True  # Start with open mouth
@@ -86,6 +87,9 @@ class Player:
         """Move to the new position and collect a dot if present."""
         row, col = new_pos
         
+        # Reset power pellet tracking
+        self.just_ate_power_pellet = False
+        
         # Collect items if player is alive
         if grid[row][col] == 2:  # Regular dot
             grid[row][col] = 0  # Remove the dot
@@ -93,6 +97,7 @@ class Player:
         elif grid[row][col] == 3:  # Power pellet/fruit
             grid[row][col] = 0  # Remove the power pellet
             self.score += self.power_pellet_points  # Increase score
+            self.just_ate_power_pellet = True  # Set flag
             
         self.pos = new_pos
     
