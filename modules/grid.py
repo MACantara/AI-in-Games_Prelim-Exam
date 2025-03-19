@@ -2,9 +2,10 @@ from typing import List, Tuple
 
 GRID_SIZE: int = 25
 
-def create_grid() -> Tuple[List[List[int]], List[List[float]]]:
+def create_grid() -> Tuple[List[List[int]], List[List[float]], Tuple[int, int]]:
     grid: List[List[int]] = [[0] * GRID_SIZE for _ in range(GRID_SIZE)]
     heights: List[List[float]] = [[0.0] * GRID_SIZE for _ in range(GRID_SIZE)]
+    player_spawn: Tuple[int, int] = (0, 0)  # Default value, will be overwritten
 
     # Define the map based on the provided image
     # '#' represents a wall (1), ' ' or other characters represent open space (0)
@@ -49,13 +50,19 @@ def create_grid() -> Tuple[List[List[int]], List[List[float]]]:
             elif cell_data == '*':
                 grid[row_index][col_index] = 2  # 2 represents points
                 heights[row_index][col_index] = 0.0
+            elif cell_data == 'C':
+                # 'C' represents the player spawn point
+                player_spawn = (row_index, col_index)
+                grid[row_index][col_index] = 0  # Treat as empty space
+                heights[row_index][col_index] = 0.0
             else:
                 grid[row_index][col_index] = 0 # Explicitly setting open spaces to 0
                 heights[row_index][col_index] = 0.0
 
-    return grid, heights
+    return grid, heights, player_spawn
 
-pacman_grid, pacman_heights = create_grid()
+# Return the player spawn position along with the grid and heights
+pacman_grid, pacman_heights, pacman_spawn = create_grid()
 
 # Print the grid (optional)
 for row in pacman_grid:

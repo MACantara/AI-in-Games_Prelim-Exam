@@ -10,6 +10,7 @@ class GameState:
     player_pos: List[int]
     player_direction: Tuple[int, int]
     ghosts: List[Ghost]
+    player_spawn_pos: Tuple[int, int]  # Store the spawn position
     score: int = 0
     ghost_release_times: List[int] = None
     game_timer: int = 0
@@ -30,8 +31,8 @@ class GameState:
     @classmethod
     def create_new_game(cls) -> 'GameState':
         """Create a new game state with initial positions."""
-        grid, _ = create_grid()
-        player_pos = [18, 11]  # Starting position
+        grid, _, player_spawn = create_grid()
+        player_pos = list(player_spawn)  # Use spawn position from grid
         player_direction = (0, 0)
         
         # Initialize ghosts
@@ -46,7 +47,8 @@ class GameState:
             grid=grid,
             player_pos=player_pos,
             player_direction=player_direction,
-            ghosts=ghosts
+            ghosts=ghosts,
+            player_spawn_pos=player_spawn
         )
     
     def update(self) -> None:
@@ -123,8 +125,8 @@ class GameState:
     
     def _reset_positions(self) -> None:
         """Reset player and ghost positions after losing a life."""
-        # Reset player position
-        self.player_pos = [18, 11]  # Starting position
+        # Reset player position to spawn point
+        self.player_pos = list(self.player_spawn_pos)
         self.player_direction = (0, 0)
         
         # Reset ghosts

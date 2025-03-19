@@ -114,7 +114,9 @@ class PacmanGame:
             self.sound_effects['dying'].play()
     
     def _on_player_respawn(self):
-        """Callback for when player respawns after death - restart eating sound."""
+        """Callback for when player respawns after death - restart eating sound and update player position."""
+        # Update player position to match the state's reset position
+        self.player.pos = self.state.player_pos.copy()
         self._play_eating_sound_loop()
         
     def _restart_game(self) -> None:
