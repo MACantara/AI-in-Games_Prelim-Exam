@@ -115,7 +115,9 @@ class Ghost(PathAgent):
             else:
                 ghost_color = (0, 0, 255)  # Blue for vulnerable
         elif self.eaten:
-            ghost_color = (200, 200, 200)  # Light gray for eaten/returning state
+            # For eaten ghosts, don't draw the body, just the eyes
+            self._draw_eyes_only(screen, cell_size)
+            return
         
         # Create a single polygon for the entire ghost body
         ghost_points = []
@@ -158,8 +160,8 @@ class Ghost(PathAgent):
         # Draw the ghost as a single polygon
         pygame.draw.polygon(screen, ghost_color, ghost_points)
         
-        # If eaten, only show eyes
-        if self.eaten:
+        # If not vulnerable, draw eyes
+        if not self.vulnerable:
             # Draw eyes as perfect circles
             eye_size = cell_size // 7
             
@@ -209,57 +211,62 @@ class Ghost(PathAgent):
                              (right_eye_center[0] + pupil_offset_x, 
                               right_eye_center[1] + pupil_offset_y), 
                              pupil_size)
-        # If vulnerable, don't show eyes (just show the blue ghost)
-        elif not self.vulnerable:
-            # Draw eyes as perfect circles
-            eye_size = cell_size // 7
-            
-            # Left eye position - more centered horizontally
-            left_eye_center = (
-                self.pos[1] * cell_size + cell_size // 3,
-                self.pos[0] * cell_size + cell_size // 3
-            )
-            
-            # Right eye position - more centered horizontally
-            right_eye_center = (
-                self.pos[1] * cell_size + cell_size * 2 // 3,
-                self.pos[0] * cell_size + cell_size // 3
-            )
-            
-            # Draw white part of eyes
-            pygame.draw.circle(screen, (255, 255, 255), left_eye_center, eye_size)
-            pygame.draw.circle(screen, (255, 255, 255), right_eye_center, eye_size)
-            
-            # Determine pupil direction
-            direction = (0, 0)
-            if self.path and len(self.path) > self.path_index + 1:
-                next_pos = self.path[self.path_index + 1]
-                direction = (next_pos[0] - self.pos[0], (next_pos[1] - self.pos[1]))
-            
-            # Calculate pupil offset based on direction
-            pupil_offset_x = 0
-            pupil_offset_y = 0
-            pupil_move_distance = eye_size // 2
-            
-            if direction[0] < 0:  # Moving up
-                pupil_offset_y = -pupil_move_distance
-            elif direction[0] > 0:  # Moving down
-                pupil_offset_y = pupil_move_distance
-            elif direction[1] < 0:  # Moving left
-                pupil_offset_x = -pupil_move_distance
-            elif direction[1] > 0:  # Moving right
-                pupil_offset_x = pupil_move_distance
-            
-            # Draw pupils as smaller circles
-            pupil_size = eye_size // 2
-            pygame.draw.circle(screen, (0, 0, 255), 
-                             (left_eye_center[0] + pupil_offset_x, 
-                              left_eye_center[1] + pupil_offset_y), 
-                             pupil_size)
-            pygame.draw.circle(screen, (0, 0, 255), 
-                             (right_eye_center[0] + pupil_offset_x, 
-                              right_eye_center[1] + pupil_offset_y), 
-                             pupil_size)
+
+    def _draw_eyes_only(self, screen, cell_size: int) -> None:
+        """Draw only the ghost eyes (used when eaten)."""
+        # Basic dimensions
+        x = self.pos[1] * cell_size
+        y = self.pos[0] * cell_size
+        
+        # Draw eyes as perfect circles
+        eye_size = cell_size // 7
+        
+        # Left eye position - more centered horizontally
+        left_eye_center = (
+            x + cell_size // 3,
+            y + cell_size // 3
+        )
+        
+        # Right eye position - more centered horizontally
+        right_eye_center = (
+            x + cell_size * 2 // 3,
+            y + cell_size // 3
+        )
+        
+        # Draw white part of eyes
+        pygame.draw.circle(screen, (255, 255, 255), left_eye_center, eye_size)
+        pygame.draw.circle(screen, (255, 255, 255), right_eye_center, eye_size)
+        
+        # Determine pupil direction
+        direction = (0, 0)
+        if self.path and len(self.path) > self.path_index + 1:
+            next_pos = self.path[self.path_index + 1]
+            direction = (next_pos[0] - self.pos[0], (next_pos[1] - self.pos[1]))
+        
+        # Calculate pupil offset based on direction
+        pupil_offset_x = 0
+        pupil_offset_y = 0
+        pupil_move_distance = eye_size // 2
+        
+        if direction[0] < 0:  # Moving up
+            pupil_offset_y = -pupil_move_distance
+        elif direction[0] > 0:  # Moving down
+            pupil_offset_y = pupil_move_distance
+        elif direction[1] < 0:  # Moving left
+            pupil_offset_x = -pupil_move_distance
+        elif direction[1] > 0:  # Moving right
+            pupil_offset_x = pupil_move_distance
+        
+        # Draw pupils as smaller circles
+        pupil_size = eye_size // 2
+        pygame.draw.circle(screen, (0, 0, 255), 
+                         (left_eye_center[0] + pupil_offset_x, 
+                          left_eye_center[1] + pupil_offset_y), 
+                         pupil_size)
+        pygame.draw.circle(screen, (0, 0, 255), 
+                         (right_eye_center[0] + pupil_offset_x, 
+                          right_eye_center[1] + pupil_offset_y), 
+                         pupil_size)
 
     def make_vulnerable(self, duration: int = 300) -> None:
         """Make the ghost vulnerable for the specified duration."""
