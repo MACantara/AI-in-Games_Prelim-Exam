@@ -121,6 +121,17 @@ class GameState:
             if self.game_timer >= release_time and not self.ghosts[i].active:
                 self.ghosts[i].active = True
                 
+        # Update ghost states - Modified to handle all active ghosts, including eaten ones
+        for ghost in self.ghosts:
+            if ghost.active:  # Remove the condition checking if not eaten
+                # Update the ghost state, and get a bool indicating if it just respawned
+                just_respawned = ghost.update(self.power_active)
+                
+                # If a ghost just respawned, we need to force a path recalculation immediately
+                if just_respawned:
+                    # Force recalculation of its path in the next update cycle
+                    ghost.path = []
+                
         for ghost in self.ghosts:
             if ghost.active:
                 ghost.scatter_mode = scatter_mode

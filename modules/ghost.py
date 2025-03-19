@@ -313,9 +313,15 @@ class Ghost(PathAgent):
                 self.vulnerable_flash = False  # Reset flash state
                 self.path = []  # Clear path to start fresh
                 self.path_index = 0
+                self.moving = True  # Ensure it's marked as moving
                 # If power mode is still active, make the ghost vulnerable again
                 if power_active:
                     self.make_vulnerable()
+                # Return to indicate this ghost has just respawned
+                return True
+            
+        # Normal update - no special event
+        return False
 
     @classmethod
     def update_all_ghosts(cls, ghosts: List['Ghost'], grid: List[List[int]], 
@@ -325,8 +331,11 @@ class Ghost(PathAgent):
             # Skip inactive ghosts
             if not ghost.active:
                 continue
-                
-            # Handle eaten ghosts differently - send them back to spawn via regular pathfinding
+            
+            # Special handling for ghosts that just finished respawning
+            just_respawned = False
+            
+            # If eaten, handle differently
             if ghost.eaten:
                 # Only calculate a new path if we don't have one or have reached the end
                 if not ghost.path or ghost.path_index >= len(ghost.path) - 1:
