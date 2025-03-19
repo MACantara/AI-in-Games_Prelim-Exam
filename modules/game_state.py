@@ -25,7 +25,7 @@ class GameState:
     respawn_callback: Optional[Callable] = field(default=None, repr=False)
     power_active: bool = False
     power_timer: int = 0
-    power_duration: int = 300  # 10 seconds at 30fps
+    power_duration: int = 900  # 30 seconds at 30fps (increased from 300/10 seconds)
     ghost_points: int = 200  # Base points for eating a ghost
     ghost_points_multiplier: int = 1  # Multiplier increases with each ghost eaten
     fruit_eaten_callback: Optional[Callable] = field(default=None, repr=False)
