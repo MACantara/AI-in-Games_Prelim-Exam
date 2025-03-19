@@ -38,16 +38,28 @@ class GameState:
     @classmethod
     def create_new_game(cls) -> 'GameState':
         """Create a new game state with initial positions."""
-        grid, _, player_spawn = create_grid()
+        grid, _, player_spawn, ghost_spawns = create_grid()
         player_pos = list(player_spawn)  # Use spawn position from grid
         player_direction = (0, 0)
         
-        # Initialize ghosts
+        # Use ghost spawn points from grid, or fallback to defaults if not enough spawn points
+        # Default ghost positions as fallback
+        default_ghost_positions = [(11, 9), (11, 10), (11, 12), (11, 13)]
+        
+        # Map ghost positions to the available spawn points
+        ghost_positions = []
+        for i in range(4):  # We need 4 ghosts
+            if i < len(ghost_spawns):
+                ghost_positions.append(ghost_spawns[i])
+            else:
+                ghost_positions.append(default_ghost_positions[i])
+        
+        # Initialize ghosts at their spawn positions
         ghosts = [
-            Ghost((11, 9), 'blinky'),
-            Ghost((11, 10), 'inky'),
-            Ghost((11, 12), 'pinky'),
-            Ghost((11, 13), 'clyde'),
+            Ghost(ghost_positions[0], 'blinky'),
+            Ghost(ghost_positions[1], 'inky'),
+            Ghost(ghost_positions[2], 'pinky'),
+            Ghost(ghost_positions[3], 'clyde'),
         ]
         
         return cls(

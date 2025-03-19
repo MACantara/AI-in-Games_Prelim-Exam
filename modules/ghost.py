@@ -43,6 +43,8 @@ class Ghost(PathAgent):
         self.vulnerable_timer = 0
         self.vulnerable_flash = False  # For blinking effect when vulnerability ends
         self.eaten = False  # Whether the ghost has been eaten and is returning to spawn
+        self.respawn_timer = 0  # Timer for respawning after being eaten
+        self.respawn_delay = 150  # 5 seconds at 30fps
 
     def reset_to_start(self) -> None:
         """Reset ghost to its starting position and state."""
@@ -271,8 +273,10 @@ class Ghost(PathAgent):
         self.eaten = True
         self.vulnerable = False
         self.path = []
-        # Target the spawn position to return
+        # Set path back to spawn
         self.set_path([self.pos, self.start_pos])
+        # Start respawn timer
+        self.respawn_timer = self.respawn_delay
         
     def update(self, power_active: bool) -> None:
         """Update ghost state."""
@@ -286,9 +290,21 @@ class Ghost(PathAgent):
                 self.vulnerable = False
                 self.vulnerable_flash = False
         
-        # If eaten and reached spawn, reactivate
+        # If eaten and reached spawn, wait before becoming active again
         if self.eaten and self.pos == self.start_pos:
-            self.eaten = False
+            if self.respawn_timer > 0:
+                self.respawn_timer -= 1
+                # Pause movement while waiting to respawn
+                return
+            else:
+                # Reset ghost state completely when respawning
+                self.eaten = False
+                self.active = True  # Reactivate the ghost
+                self.vulnerable = False  # Ensure ghost is not vulnerable
+                self.vulnerable_flash = False  # Reset flash state
+                # If power mode is still active, make the ghost vulnerable again
+                if power_active:
+                    self.make_vulnerable()
 
     @classmethod
     def update_all_ghosts(cls, ghosts: List['Ghost'], grid: List[List[int]], 
