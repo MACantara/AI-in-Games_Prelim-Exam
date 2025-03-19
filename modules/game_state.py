@@ -51,19 +51,23 @@ class GameState:
     
     def update(self) -> None:
         """Update game state for one frame."""
-        if self.game_over:
-            return
-            
-        # Handle death animation
+        # Handle death animation even in game over state
         if self.dying:
             self.death_timer += 1
             if self.death_timer >= self.death_animation_length:
                 self.dying = False
                 self.death_timer = 0
-                self._reset_positions()
-                # Call respawn callback after reset
-                if self.respawn_callback:
-                    self.respawn_callback()
+                
+                # Only reset positions if we still have lives
+                if not self.game_over:
+                    self._reset_positions()
+                    # Call respawn callback after reset
+                    if self.respawn_callback:
+                        self.respawn_callback()
+            return
+            
+        # Skip other updates if game over
+        if self.game_over:
             return
         
         self.game_timer += 1
@@ -106,15 +110,16 @@ class GameState:
         if self.death_callback:
             self.death_callback()
             
+        # Start death animation in either case
+        self.dying = True
+        self.death_timer = 0
+        # Freeze ghosts during animation
+        for ghost in self.ghosts:
+            ghost.active = False
+            
+        # Set game over flag if needed
         if self.lives <= 0:
             self.game_over = True
-        else:
-            # Start death animation instead of immediately resetting
-            self.dying = True
-            self.death_timer = 0
-            # Freeze ghosts during animation
-            for ghost in self.ghosts:
-                ghost.active = False
     
     def _reset_positions(self) -> None:
         """Reset player and ghost positions after losing a life."""

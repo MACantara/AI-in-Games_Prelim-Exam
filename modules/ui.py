@@ -34,7 +34,8 @@ class UI:
         if debug_mode:
             self._draw_debug_info(ghosts)
             
-        if game_over:
+        # Only show game over overlay after death animation is finished
+        if game_over and not dying:
             self._draw_game_over()
             
         pygame.display.flip()

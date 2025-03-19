@@ -94,13 +94,13 @@ class PacmanGame:
                     self._init_game()
                 # Ignore keypresses during startup
             else:
-                # Regular game input handling
+                # Regular game input handling - ignore during dying animation
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F3:
                         self.state.debug_mode = not self.state.debug_mode
-                    elif event.key == pygame.K_r and self.state.game_over:
+                    elif event.key == pygame.K_r and self.state.game_over and not self.state.dying:
                         self._restart_game()
-                    elif not self.state.game_over:
+                    elif not self.state.game_over and not self.state.dying:
                         self.player.handle_key_input(event.key)
         return True
     
