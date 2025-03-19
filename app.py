@@ -1,4 +1,5 @@
 import pygame
+import os
 from typing import Tuple, Optional
 from modules.game_state import GameState
 from modules.algorithms import astar_path
@@ -9,31 +10,58 @@ from modules.ui import UI
 class PacmanGame:
     def __init__(self, cell_size: int = 30):
         pygame.init()
+        pygame.mixer.init()  # Initialize the mixer for audio
         self.cell_size = cell_size
         self.width = 23 * cell_size
         self.height = 25 * cell_size
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Pacman with AI Enemies")
         self.clock = pygame.time.Clock()
-        self.state = GameState.create_new_game()
+        
+        # Game states
+        self.in_startup = True
+        self.state = None
         self.ghost_move_delay = 0
-        # Create player instance with initial position
-        self.player = Player(self.state.player_pos)
-        # Create UI handler
+        self.player = None
         self.ui = UI(self.screen, self.cell_size)
         
+        # Load and play startup music
+        self.startup_music_path = os.path.join(os.path.dirname(__file__), "static/audio/start-up.mp3")
+        if os.path.exists(self.startup_music_path):
+            pygame.mixer.music.load(self.startup_music_path)
+            pygame.mixer.music.play()
+        else:
+            print(f"Warning: Could not find startup music at {self.startup_music_path}")
+            self.in_startup = False  # Skip startup if music file doesn't exist
+            self._init_game()
+    
+    def _init_game(self):
+        """Initialize the game state and player."""
+        self.state = GameState.create_new_game()
+        self.player = Player(self.state.player_pos)
+        self.ghost_move_delay = 0
+
     def handle_input(self) -> bool:
         """Handle user input. Returns False if game should quit."""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_F3:
-                    self.state.debug_mode = not self.state.debug_mode
-                elif event.key == pygame.K_r and self.state.game_over:
-                    self._restart_game()
-                elif not self.state.game_over:
-                    self.player.handle_key_input(event.key)
+            
+            if self.in_startup:
+                # Skip startup screen if any key is pressed or startup music ends
+                if event.type == pygame.KEYDOWN or not pygame.mixer.music.get_busy():
+                    self.in_startup = False
+                    pygame.mixer.music.stop()  # Stop music if it's still playing
+                    self._init_game()
+            else:
+                # Regular game input handling
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_F3:
+                        self.state.debug_mode = not self.state.debug_mode
+                    elif event.key == pygame.K_r and self.state.game_over:
+                        self._restart_game()
+                    elif not self.state.game_over:
+                        self.player.handle_key_input(event.key)
         return True
     
     def _restart_game(self) -> None:
@@ -44,6 +72,13 @@ class PacmanGame:
         
     def update(self) -> None:
         """Update game state."""
+        if self.in_startup:
+            # Check if startup music has finished
+            if not pygame.mixer.music.get_busy():
+                self.in_startup = False
+                self._init_game()
+            return
+        
         # Update player position and collect dots
         self.player.update_position(self.state.grid, self.state.dying)
         
@@ -65,17 +100,76 @@ class PacmanGame:
         
     def render(self) -> None:
         """Render the game state using the UI handler."""
-        self.ui.render_game(
-            self.state.grid,
-            self.player,
-            self.state.ghosts,
-            self.state.debug_mode,
-            self.state.game_over,
-            self.state.lives,
-            self.state.dying,
-            self.state.death_timer,
-            self.state.death_animation_length
-        )
+        if self.in_startup:
+            self._draw_startup_screen()
+        else:
+            self.ui.render_game(
+                self.state.grid,
+                self.player,
+                self.state.ghosts,
+                self.state.debug_mode,
+                self.state.game_over,
+                self.state.lives,
+                self.state.dying,
+                self.state.death_timer,
+                self.state.death_animation_length
+            )
+    
+    def _draw_startup_screen(self) -> None:
+        """Draw the game grid and entities while startup music plays."""
+        # If game state isn't initialized yet, create it temporarily for drawing
+        if not self.state:
+            temp_state = GameState.create_new_game()
+            temp_player = Player(temp_state.player_pos)
+            # Draw the game grid and entities
+            self.ui.render_game(
+                temp_state.grid,
+                temp_player,
+                temp_state.ghosts,
+                debug_mode=False,
+                game_over=False,
+                lives=3,
+                dying=False,
+                death_timer=0,
+                death_animation_length=90
+            )
+        else:
+            # Use existing state if available
+            self.ui.render_game(
+                self.state.grid,
+                self.player,
+                self.state.ghosts,
+                self.state.debug_mode,
+                self.state.game_over,
+                self.state.lives,
+                self.state.dying,
+                self.state.death_timer,
+                self.state.death_animation_length
+            )
+
+        # Add overlay with startup instructions
+        overlay = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))  # Semi-transparent black overlay
+        self.screen.blit(overlay, (0, 0))
+        
+        # Draw title
+        font_large = pygame.font.Font(None, 72)
+        title_text = font_large.render("PACMAN", True, (255, 255, 0))
+        title_rect = title_text.get_rect(center=(self.width // 2, self.height // 3))
+        self.screen.blit(title_text, title_rect)
+        
+        # Draw subtitle
+        font_medium = pygame.font.Font(None, 36)
+        subtitle_text = font_medium.render("with AI Enemies", True, (255, 255, 255))
+        subtitle_rect = subtitle_text.get_rect(center=(self.width // 2, self.height // 3 + 50))
+        self.screen.blit(subtitle_text, subtitle_rect)
+        
+        # Draw "Press any key" text
+        instruction_text = "Press any key to start"
+        instruction_render = font_medium.render(instruction_text, True, (255, 255, 255))
+        instruction_rect = instruction_render.get_rect(center=(self.width // 2, self.height * 2 // 3))
+        self.screen.blit(instruction_render, instruction_rect)
+        
         
     def run(self) -> None:
         """Main game loop."""
