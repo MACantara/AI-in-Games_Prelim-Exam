@@ -162,8 +162,12 @@ class Ghost(PathAgent):
         # Draw the ghost as a single polygon
         pygame.draw.polygon(screen, ghost_color, ghost_points)
         
-        # If not vulnerable, draw eyes
-        if not self.vulnerable:
+        # Draw appropriate eyes based on state
+        if self.vulnerable:
+            # Draw scared eyes when vulnerable
+            self._draw_scared_eyes(screen, cell_size)
+        elif not self.vulnerable:
+            # Draw normal eyes
             # Draw eyes as perfect circles
             eye_size = cell_size // 7
             
@@ -269,6 +273,44 @@ class Ghost(PathAgent):
                          (right_eye_center[0] + pupil_offset_x, 
                           right_eye_center[1] + pupil_offset_y), 
                          pupil_size)
+
+    def _draw_scared_eyes(self, screen, cell_size: int) -> None:
+        """Draw scared eyes when the ghost is vulnerable."""
+        # Basic dimensions
+        x = self.pos[1] * cell_size
+        y = self.pos[0] * cell_size
+        
+        # Define blue color for scared face
+        scared_color = (255, 255, 255)  # White for eyes and mouth
+        
+        # Eyes as simple horizontal lines (classic scared look)
+        eye_width = cell_size // 5
+        eye_height = max(2, cell_size // 10)
+        
+        # Left eye horizontal line
+        pygame.draw.rect(screen, scared_color, (
+            x + cell_size//3 - eye_width//2, 
+            y + cell_size//3, 
+            eye_width, 
+            eye_height
+        ))
+        
+        # Right eye horizontal line
+        pygame.draw.rect(screen, scared_color, (
+            x + cell_size*2//3 - eye_width//2, 
+            y + cell_size//3, 
+            eye_width, 
+            eye_height
+        ))
+        
+        # Simple straight mouth
+        mouth_width = cell_size // 3
+        pygame.draw.rect(screen, scared_color, (
+            x + cell_size//2 - mouth_width//2,
+            y + cell_size//2,
+            mouth_width,
+            eye_height  # Same height as eyes
+        ))
 
     def make_vulnerable(self, duration: int = 300) -> None:
         """Make the ghost vulnerable for the specified duration."""
